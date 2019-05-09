@@ -4,10 +4,10 @@ ArrayList<Resource> resources;
 
 Random r = new Random();
 
-float fieldHeight = 747;
-float fieldWidth = 747;
+float fieldHeight = 1000;
+float fieldWidth = 720;
 float resourceSize = 17;
-int numResources = 100;
+int numResources = 10;
 
 class Resource {
   PVector position;
@@ -24,7 +24,7 @@ class Resource {
 }
 
 void setup() {
-  size(600,600);
+  size(1000,720);
   
   // Initialize list of resources
   resources = new ArrayList<Resource>(numResources);
