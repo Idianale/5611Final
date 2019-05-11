@@ -90,19 +90,56 @@ void drawSim() {
   for (Obstacle obstacle : obstacles) {
     obstacle.Draw();
   }
+  
+  // TODO: REMOVE FOLLOWING DEBUG CODE
+  for (Acquisition acquisition : acquisition){
+    // Render Possible Paths
+    strokeWeight(1);
+    stroke(20, 50, 100);
+    for (int i=0; i<NODECOUNT; i++) {
+      for (int j=0; j<NODECOUNT; j++) {
+        if (acquisition.nodeCost[i][j]!=Float.POSITIVE_INFINITY) {
+          line(acquisition.nodePos[i][0], acquisition.nodePos[i][1], 
+               acquisition.nodePos[j][0], acquisition.nodePos[j][1]);
+        }
+      }
+    }
+    for (int i=0; i<(acquisition.answer.size()-1); i++) {
+      if (acquisition.answer.size() > 1){
+        stroke(100, 150, 255);
+        strokeWeight(3);
+        line(acquisition.nodePos[acquisition.answer.get(i)][0],
+             acquisition.nodePos[acquisition.answer.get(i)][1],
+             acquisition.nodePos[acquisition.answer.get(i+1)][0],
+             acquisition.nodePos[acquisition.answer.get(i+1)][1]);
+      }
+    }
+  }
+  
 }
 
 void draw() {
   updateSim(0.01);
-  
   drawSim();
+  //println("FPS: ",frameRate);
 }
 
 void keyPressed() {
+  // Reset Simulation
   if (keyCode  == 'R') {
     reset();
   }
+  
+  // Debug keyCodes
+  if (keyCode  == 'Q') {
+    for (Acquisition acquisition : acquisition) {
+      Resource resource = acquisition.LocateResource();
+      if (resource != null) acquisition.FindPathToResource(resource);
+    }
+  }
 }
+
+// Reset Simulation
 void reset(){
   // Initialize list of obstacles
   obstacles = new ArrayList<Obstacle>(numObstacles);

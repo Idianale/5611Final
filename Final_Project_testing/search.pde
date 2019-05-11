@@ -22,7 +22,7 @@ boolean search(Agent agent) {
   }
 
   // A* Search
-  
+
   while (true) {
     for (int j=0; j<NODECOUNT; j++) {
       if (agent.nodeCost[currentPath.get(currentPath.size()-1)][j] != Float.POSITIVE_INFINITY) {
@@ -66,5 +66,4 @@ boolean search(Agent agent) {
     queueCost.remove();
     queuePath.remove();
   }
-  
 }

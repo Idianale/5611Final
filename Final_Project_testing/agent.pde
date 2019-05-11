@@ -33,10 +33,68 @@ class Agent{
     float dist_x = x - agent.pos.x;
     float dist_y = y - agent.pos.y;
     float dist = sqrt( (dist_x*dist_x) + (dist_y*dist_y) );
-    if (dist < (agent.size+size)){
+    if (dist < (agent.size/2+size/2)){
       return true;
     }
     else return false;
+  }
+  
+  boolean validAgentCSpace(float x, float y){
+    for (Obstacle obstacle : obstacles) {
+      if (obstacle.obstacleCollision(x, y, this.size)){
+        return false;
+      }
+    }
+    return true;
+  }
+  
+  void initializeNodes(float goalX, float goalY) {
+    nodePos[0][0] = this.pos.x;
+    nodePos[0][1] = this.pos.y;
+    // Goal Nodes
+    nodePos[NODECOUNT-1][0] = goalX;
+    nodePos[NODECOUNT-1][1] = goalY;
+    // Other Nodes
+    float x, y;
+    for (int i=1; i<(NODECOUNT-1); i++) {
+      x = random(this.size, fieldWidth-this.size);
+      y = random(this.size, fieldHeight-this.size);
+      if (validAgentCSpace(x, y)) {
+        nodePos[i][0] = x;
+        nodePos[i][1] = y;
+      } else { 
+        i--;
+      }
+    }
+  }
+  
+  // If a line from node i to j does not collide with anything in the agent C-Space, 
+  // then nodeCost[i][j] contains the distance between i and j. Otherwise, nodeCost[i][j] contains Infinity.
+  void calcNodeCostMatrix() {
+    for (int i=0; i<NODECOUNT; i++) {
+      for (int j=0; j<NODECOUNT; j++) {
+        // Check for intersection
+        nodeCost[i][j] = nodePathCollision(i, j, calcNodeCost(i, j));
+      }
+    }
+  }
+  float nodePathCollision(int i, int j, float dist) {
+    int intervalCount = (int)(dist);
+    float intervalDirX = (nodePos[j][0]-nodePos[i][0])/intervalCount;
+    float intervalDirY = (nodePos[j][1]-nodePos[i][1])/intervalCount;
+    float intervalPosX = nodePos[i][0];
+    float intervalPosY = nodePos[i][1];
+    for (int k=0; k<intervalCount; k++) {
+      if (!validAgentCSpace(intervalPosX, intervalPosY)) return Float.POSITIVE_INFINITY;
+      intervalPosX += intervalDirX;
+      intervalPosY += intervalDirY;
+    }
+    return dist;
+  }
+  float calcNodeCost(int i, int j) {
+    float dx = nodePos[i][0]-nodePos[j][0];
+    float dy = nodePos[i][1]-nodePos[j][1];
+    return sqrt(dx*dx + dy*dy);
   }
   
 }
@@ -95,6 +153,52 @@ class Acquisition extends Agent{
     ellipse(this.pos.x,this.pos.y,this.size,this.size);
     noFill();
   }
+  
+  // behaviors
+  
+  // Find and return the closest nondepleted resource
+  Resource LocateResource(){
+    float shortestDistance = Float.POSITIVE_INFINITY;
+    Resource closestResource = null;
+    float dist_x, dist_y, dist;
+    for (Resource resource : resources) {
+      if (resource.quantity > 0) {
+        dist_x = this.pos.x - resource.position.x;
+        dist_y = this.pos.y - resource.position.y;
+        dist = sqrt((dist_x*dist_x) + (dist_y*dist_y));
+        if (dist < shortestDistance){
+          shortestDistance = dist;
+          closestResource = resource;
+        }
+      }
+    }
+    return closestResource;
+  }
+  
+  // Find path to resource
+  void FindPathToResource(Resource resource){
+    for (int i=0; i<5; i++) {
+      initializeNodes(resource.position.x, resource.position.y);
+      calcNodeCostMatrix();
+      if (search(this)) {
+        answerFound = true;
+        break;
+      }
+    }
+  }
+  
+  // Move to resource along path stored in this.answer
+  void MoveToResource(){
+    /*
+    calculateNextNode();
+    calculateForces();
+    calculateVelocities(dt);
+    calculatePositions(dt);
+    calculateCollisions();
+    calculateRotations(dt);
+    */
+  }
+  
 }
 
 /*
@@ -181,7 +285,7 @@ class Predator extends Agent{
       // Check for minimum distance from herd
       dist_x = spawn_at_x - herdX;
       dist_y = spawn_at_y - herdY;
-      if (((dist_x*dist_x) + (dist_y*dist_y)) < minDistFromHerd) noCollision = false;
+      if (sqrt((dist_x*dist_x) + (dist_y*dist_y)) < minDistFromHerd) noCollision = false;
       // Check for collision with other predators
       if (noCollision){
         for (int i=0; i<agentSpawned; i++){

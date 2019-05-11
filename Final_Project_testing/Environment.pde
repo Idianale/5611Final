@@ -1,3 +1,5 @@
+// TODO: Implement resource depletion using resource.quantity
+
 class Obstacle{
   PVector position; 
   float size;
@@ -13,7 +15,7 @@ class Obstacle{
   }
   
   void Draw() {
-    fill(60,60,60);
+    fill(60,30,60);
     ellipse(this.position.x,this.position.y,this.size,this.size);
     noFill();
   }
@@ -23,7 +25,7 @@ class Obstacle{
     float dist_x = x - this.position.x;
     float dist_y = y - this.position.y;
     float dist = sqrt( (dist_x*dist_x) + (dist_y*dist_y) );
-    if (dist < (size+this.size)){
+    if (dist < (size/2+this.size/2)){
       return true;
     }
     else return false;
@@ -58,7 +60,7 @@ class Resource {
   }
   
   void Draw() {
-    fill(250,250,250);
+    fill(100+15*quantity,100+15*quantity,100+15*quantity);
     ellipse(this.position.x,this.position.y,resourceSize,resourceSize);
     noFill();
   }
