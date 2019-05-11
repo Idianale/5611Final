@@ -58,6 +58,8 @@ class Resource {
   }
   
   void Draw() {
+    fill(250,250,250);
     ellipse(this.position.x,this.position.y,resourceSize,resourceSize);
+    noFill();
   }
 }

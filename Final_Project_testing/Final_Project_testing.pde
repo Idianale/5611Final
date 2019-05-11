@@ -51,7 +51,7 @@ void setup() {
   // Initialize list of predator agents
   predator = new ArrayList<Predator>(numPredator);
   for (int i = 0; i < numPredator; i++) {
-    predator.add(new Predator(spawnX,spawnY,i,200));
+    predator.add(new Predator(spawnX,spawnY,i,300));
   }
   
 }
@@ -60,6 +60,7 @@ void updateSim(double dt) {
 }
 
 void drawSim() {
+  background(200,200,200);
   for (Resource resource : resources) {
     resource.Draw();
   }
@@ -81,4 +82,39 @@ void draw() {
   updateSim(0.01);
   
   drawSim();
+}
+
+void keyPressed() {
+  if (keyCode  == 'R') {
+    reset();
+  }
+}
+void reset(){
+  // Initialize list of obstacles
+  obstacles = new ArrayList<Obstacle>(numObstacles);
+  for (int i = 0; i < numObstacles; i++) {
+    obstacles.add(new Obstacle(r.nextFloat()*fieldWidth,r.nextFloat()*fieldHeight, 100+r.nextFloat()*100 ));
+  }
+  // Initialize list of resources
+  resources = new ArrayList<Resource>(numResources);
+  for (int i = 0; i < numResources; i++) {
+    resources.add(new Resource());
+  }
+  // Initialize list of acquisition agents
+  acquisition = new ArrayList<Acquisition>(numAcquisition);
+  float spawnX = (fieldWidth * 0.1) + (r.nextFloat() * fieldWidth * 0.8);
+  float spawnY = (fieldHeight * 0.1) + (r.nextFloat() * fieldHeight * 0.8);
+  for (int i = 0; i < numAcquisition; i++) {
+    acquisition.add(new Acquisition(spawnX,spawnY,i));
+  } 
+  // Initialize list of recon agents
+  recon = new ArrayList<Recon>(numRecon);
+  for (int i = 0; i < numRecon; i++) {
+    recon.add(new Recon(spawnX,spawnY,i));
+  }
+  // Initialize list of predator agents
+  predator = new ArrayList<Predator>(numPredator);
+  for (int i = 0; i < numPredator; i++) {
+    predator.add(new Predator(spawnX,spawnY,i,200));
+  }
 }

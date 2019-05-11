@@ -164,10 +164,12 @@ class Predator extends Agent{
       dist_y = spawn_at_y - herdY;
       if (((dist_x*dist_x) + (dist_y*dist_y)) < minDistFromHerd) noCollision = false;
       // Check for collision with other predators
-      for (int i=0; i<agentSpawned; i++){
-        if (this.spawnCollisionAgent(spawn_at_x, spawn_at_y, this.size, predator.get(i))){
-          noCollision = false;
-          break;
+      if (noCollision){
+        for (int i=0; i<agentSpawned; i++){
+          if (this.spawnCollisionAgent(spawn_at_x, spawn_at_y, this.size, predator.get(i))){
+            noCollision = false;
+            break;
+          }
         }
       }
       // Check for collision with acquisition agents
