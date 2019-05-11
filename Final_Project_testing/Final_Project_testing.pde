@@ -34,13 +34,27 @@ void setup() {
     resources.add(new Resource());
   }
   
+  // Initialize Herd location - Herd cannot be placed inside an obstacle
+  boolean isColliding;
+  float spawnX, spawnY;
+  while (true){
+    isColliding = false;
+    spawnX = (fieldWidth * 0.1) + (r.nextFloat() * fieldWidth * 0.8);
+    spawnY = (fieldHeight * 0.1) + (r.nextFloat() * fieldHeight * 0.8);
+    for (Obstacle obstacle : obstacles) {
+      if (obstacle.obstacleCollision(spawnX,spawnY,0)){
+        isColliding = true;
+        break;
+      }
+    }
+    if (!isColliding) break;
+  }
+  
   // Initialize list of acquisition agents
   acquisition = new ArrayList<Acquisition>(numAcquisition);
-  float spawnX = (fieldWidth * 0.1) + (r.nextFloat() * fieldWidth * 0.8);
-  float spawnY = (fieldHeight * 0.1) + (r.nextFloat() * fieldHeight * 0.8);
   for (int i = 0; i < numAcquisition; i++) {
     acquisition.add(new Acquisition(spawnX,spawnY,i));
-  }
+  } 
   
   // Initialize list of recon agents
   recon = new ArrayList<Recon>(numRecon);
@@ -51,7 +65,7 @@ void setup() {
   // Initialize list of predator agents
   predator = new ArrayList<Predator>(numPredator);
   for (int i = 0; i < numPredator; i++) {
-    predator.add(new Predator(spawnX,spawnY,i,300));
+    predator.add(new Predator(spawnX,spawnY,i,400));
   }
   
 }
@@ -100,10 +114,23 @@ void reset(){
   for (int i = 0; i < numResources; i++) {
     resources.add(new Resource());
   }
+  // Initialize Herd location - Herd cannot be placed inside an obstacle
+  boolean isColliding;
+  float spawnX, spawnY;
+  while (true){
+    isColliding = false;
+    spawnX = (fieldWidth * 0.1) + (r.nextFloat() * fieldWidth * 0.8);
+    spawnY = (fieldHeight * 0.1) + (r.nextFloat() * fieldHeight * 0.8);
+    for (Obstacle obstacle : obstacles) {
+      if (obstacle.obstacleCollision(spawnX,spawnY,0)){
+        isColliding = true;
+        break;
+      }
+    }
+    if (!isColliding) break;
+  }
   // Initialize list of acquisition agents
   acquisition = new ArrayList<Acquisition>(numAcquisition);
-  float spawnX = (fieldWidth * 0.1) + (r.nextFloat() * fieldWidth * 0.8);
-  float spawnY = (fieldHeight * 0.1) + (r.nextFloat() * fieldHeight * 0.8);
   for (int i = 0; i < numAcquisition; i++) {
     acquisition.add(new Acquisition(spawnX,spawnY,i));
   } 
