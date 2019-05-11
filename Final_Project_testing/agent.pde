@@ -29,8 +29,6 @@ class Agent{
     float dist_x = x - agent.pos.x;
     float dist_y = y - agent.pos.y;
     float dist = sqrt( (dist_x*dist_x) + (dist_y*dist_y) );
-    print (dist, agent.size, size, "\n"); // TODO: Remove this line
-    print(x, y,"\n"); // TODO: Remove this line
     if (dist < (agent.size+size)){
       return true;
     }
@@ -50,15 +48,16 @@ class Acquisition extends Agent{
     this.size = 30;
     this.pos = new PVector(r.nextFloat()*fieldWidth,r.nextFloat()*fieldHeight,0);
   }
-  Acquisition(float x, float y, int agentSpawned, ArrayList<Acquisition> acquisition){
+  Acquisition(float x, float y, int agentSpawned){
     this.size = 30;
     float spawn_at_x, spawn_at_y;
-    // Check for collision with all recon and acquisition agents
+    // Check for collision with previously spawned agents and obstacles
     boolean noCollision = true;
     for (int s=1; s<10; s++){
       noCollision = true;
-      spawn_at_x = (x-size*s)+(r.nextFloat()*size*2*s);
-      spawn_at_y = (y-size*s)+(r.nextFloat()*size*2*s);
+      spawn_at_x = (x-size/2*s)+(r.nextFloat()*size*s);
+      spawn_at_y = (y-size/2*s)+(r.nextFloat()*size*s);
+      // Check for collision with other acquisition agents
       for (int i=0; i<agentSpawned; i++){
         if (this.spawnCollisionAgent(spawn_at_x, spawn_at_y, this.size, acquisition.get(i))){
           noCollision = false;
@@ -67,10 +66,10 @@ class Acquisition extends Agent{
       }
       if (noCollision){
         this.pos = new PVector(spawn_at_x,spawn_at_y,0);
-        print(agentSpawned,spawn_at_x, spawn_at_y,"\n"); // TODO: Remove this line
         break;
       }
     }
+    // If no viable position near herd, spawn location is random
     if (!noCollision) this.pos = new PVector(r.nextFloat()*fieldWidth,r.nextFloat()*fieldHeight,0);
   }  
   void display() {
@@ -86,21 +85,23 @@ class Recon extends Agent{
     this.size = 20;
     this.pos = new PVector(r.nextFloat()*fieldWidth,r.nextFloat()*fieldHeight,0);
   }
-  Recon(float x, float y, int agentSpawned, ArrayList<Recon> recon, ArrayList<Acquisition> acquisition){
+  Recon(float x, float y, int agentSpawned){
     this.size = 20;
     float spawn_at_x, spawn_at_y;
-    // Check for collision with all recon agents
+    // Check for collision with previously spawned agents and obstacles
     boolean noCollision = true;
     for (int s=5; s<15; s++){
       noCollision = true;
-      spawn_at_x = (x-size*s)+(r.nextFloat()*size*2*s);
-      spawn_at_y = (y-size*s)+(r.nextFloat()*size*2*s);
+      spawn_at_x = (x-size/2*s)+(r.nextFloat()*size*s);
+      spawn_at_y = (y-size/2*s)+(r.nextFloat()*size*s);
+      // Check for collision with other recon agents
       for (int i=0; i<agentSpawned; i++){
         if (this.spawnCollisionAgent(spawn_at_x, spawn_at_y, this.size, recon.get(i))){
           noCollision = false;
           break;
         }
       }
+      // Check for collision with acquisition agents
       if (noCollision){
         for (int i=0; i<acquisition.size(); i++){
           if (this.spawnCollisionAgent(spawn_at_x, spawn_at_y, this.size, acquisition.get(i))){
@@ -111,10 +112,10 @@ class Recon extends Agent{
       }
       if (noCollision){
         this.pos = new PVector(spawn_at_x,spawn_at_y,0);
-        print(agentSpawned,spawn_at_x, spawn_at_y,"\n"); // TODO: Remove this line
         break;
       }
     }
+    // If no viable position near herd, spawn location is random
     if (!noCollision) this.pos = new PVector(r.nextFloat()*fieldWidth,r.nextFloat()*fieldHeight,0);
   }
   void display() {
