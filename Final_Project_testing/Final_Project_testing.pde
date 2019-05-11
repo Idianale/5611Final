@@ -2,17 +2,18 @@
 
 import java.util.*;
 
+ArrayList<Obstacle> obstacles;
 ArrayList<Resource> resources;
 ArrayList<Recon> recon;
 ArrayList<Acquisition> acquisition;
 ArrayList<Predator> predator;
-ArrayList<Obstacle> obstacles;
 
 Random r = new Random();
 
 float fieldHeight = 720;
 float fieldWidth = 1000;
 float resourceSize = 17;
+int numObstacles = 3;
 int numResources = 50;
 int numRecon = 4;
 int numAcquisition = 4;
@@ -27,6 +28,12 @@ void setup() {
     resources.add(new Resource());
   }
   
+  
+  // Initialize list of obstacles
+  obstacles = new ArrayList<Obstacle>(numObstacles);
+  for (int i = 0; i < numObstacles; i++) {
+    obstacles.add(new Obstacle(r.nextFloat()*fieldWidth,r.nextFloat()*fieldHeight, 100+r.nextFloat()*100 ));
+  }
   
   // Initialize list of acquisition agents
   acquisition = new ArrayList<Acquisition>(numAcquisition);
@@ -65,6 +72,9 @@ void drawSim() {
   }
   for (Predator predator : predator) {
     predator.display();
+  }
+  for (Obstacle obstacle : obstacles) {
+    obstacle.Draw();
   }
 }
 

@@ -53,7 +53,7 @@ class Acquisition extends Agent{
     float spawn_at_x, spawn_at_y;
     // Check for collision with previously spawned agents and obstacles
     boolean noCollision = true;
-    for (int s=1; s<10; s++){
+    for (int s=1; s<15; s++){
       noCollision = true;
       spawn_at_x = (x-size/2*s)+(r.nextFloat()*size*s);
       spawn_at_y = (y-size/2*s)+(r.nextFloat()*size*s);
@@ -62,6 +62,15 @@ class Acquisition extends Agent{
         if (this.spawnCollisionAgent(spawn_at_x, spawn_at_y, this.size, acquisition.get(i))){
           noCollision = false;
           break;
+        }
+      }
+      // Check for collision with obstacles
+      if (noCollision){
+        for (int i=0; i<obstacles.size(); i++){
+          if (obstacles.get(i).obstacleCollision(spawn_at_x, spawn_at_y, this.size)){
+            noCollision = false;
+            break;
+          }
         }
       }
       if (noCollision){
@@ -90,7 +99,7 @@ class Recon extends Agent{
     float spawn_at_x, spawn_at_y;
     // Check for collision with previously spawned agents and obstacles
     boolean noCollision = true;
-    for (int s=5; s<15; s++){
+    for (int s=5; s<20; s++){
       noCollision = true;
       spawn_at_x = (x-size/2*s)+(r.nextFloat()*size*s);
       spawn_at_y = (y-size/2*s)+(r.nextFloat()*size*s);
@@ -105,6 +114,15 @@ class Recon extends Agent{
       if (noCollision){
         for (int i=0; i<acquisition.size(); i++){
           if (this.spawnCollisionAgent(spawn_at_x, spawn_at_y, this.size, acquisition.get(i))){
+            noCollision = false;
+            break;
+          }
+        }
+      }
+      // Check for collision with obstacles
+      if (noCollision){
+        for (int i=0; i<obstacles.size(); i++){
+          if (obstacles.get(i).obstacleCollision(spawn_at_x, spawn_at_y, this.size)){
             noCollision = false;
             break;
           }
