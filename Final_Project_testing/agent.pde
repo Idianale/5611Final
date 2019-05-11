@@ -4,6 +4,10 @@ class Agent{
   PVector acc; 
   float size;
   float dir;
+  float[][] nodePos = new float[NODECOUNT][2];
+  float[][] nodeCost = new float[NODECOUNT][NODECOUNT];
+  IntList answer  = new IntList();
+  boolean answerFound = false;
   WorldState ws; 
   
   Agent(){
@@ -42,6 +46,11 @@ class WorldState{
   }; 
 }
 
+/*
+=========================================
+               ACQUISITION               
+=========================================
+*/
 
 class Acquisition extends Agent{
   Acquisition(){
@@ -88,6 +97,11 @@ class Acquisition extends Agent{
   }
 }
 
+/*
+===================================
+               RECON               
+===================================
+*/
 
 class Recon extends Agent{
   Recon(){
@@ -143,6 +157,11 @@ class Recon extends Agent{
   }
 }
 
+/*
+======================================
+               PREDATOR               
+======================================
+*/
 
 class Predator extends Agent{
   Predator(){
