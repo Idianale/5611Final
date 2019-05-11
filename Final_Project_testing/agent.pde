@@ -149,6 +149,61 @@ class Predator extends Agent{
     this.size = 20;
     this.pos = new PVector(r.nextFloat()*fieldWidth,r.nextFloat()*fieldHeight,0);
   }
+  Predator(float herdX, float herdY, int agentSpawned, float minDistFromHerd){
+    this.size = 20;
+    
+    float spawn_at_x, spawn_at_y, dist_x, dist_y;
+    // Check for collision with previously spawned agents and obstacles
+    boolean noCollision = true;
+    for (int s=0; s<20; s++){
+      noCollision = true;
+      spawn_at_x = r.nextFloat()*fieldWidth;
+      spawn_at_y = r.nextFloat()*fieldHeight;
+      // Check for minimum distance from herd
+      dist_x = spawn_at_x - herdX;
+      dist_y = spawn_at_y - herdY;
+      if (((dist_x*dist_x) + (dist_y*dist_y)) < minDistFromHerd) noCollision = false;
+      // Check for collision with other predators
+      for (int i=0; i<agentSpawned; i++){
+        if (this.spawnCollisionAgent(spawn_at_x, spawn_at_y, this.size, predator.get(i))){
+          noCollision = false;
+          break;
+        }
+      }
+      // Check for collision with acquisition agents
+      if (noCollision){
+        for (int i=0; i<acquisition.size(); i++){
+          if (this.spawnCollisionAgent(spawn_at_x, spawn_at_y, this.size, acquisition.get(i))){
+            noCollision = false;
+            break;
+          }
+        }
+      }
+      // Check for collision with recon agents
+      if (noCollision){
+        for (int i=0; i<recon.size(); i++){
+          if (this.spawnCollisionAgent(spawn_at_x, spawn_at_y, this.size, recon.get(i))){
+            noCollision = false;
+            break;
+          }
+        }
+      }
+      // Check for collision with obstacles
+      if (noCollision){
+        for (int i=0; i<obstacles.size(); i++){
+          if (obstacles.get(i).obstacleCollision(spawn_at_x, spawn_at_y, this.size)){
+            noCollision = false;
+            break;
+          }
+        }
+      }
+      if (noCollision){
+        this.pos = new PVector(spawn_at_x,spawn_at_y,0);
+        break;
+      }
+    }
+  }
+  
   void display() {
     fill(150, 50, 50);
     ellipse(this.pos.x,this.pos.y,this.size,this.size);

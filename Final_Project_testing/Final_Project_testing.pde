@@ -22,17 +22,16 @@ int numPredator = 1;
 void setup() {
   size(1000,720);
   
-  // Initialize list of resources
-  resources = new ArrayList<Resource>(numResources);
-  for (int i = 0; i < numResources; i++) {
-    resources.add(new Resource());
-  }
-  
-  
   // Initialize list of obstacles
   obstacles = new ArrayList<Obstacle>(numObstacles);
   for (int i = 0; i < numObstacles; i++) {
     obstacles.add(new Obstacle(r.nextFloat()*fieldWidth,r.nextFloat()*fieldHeight, 100+r.nextFloat()*100 ));
+  }
+  
+  // Initialize list of resources
+  resources = new ArrayList<Resource>(numResources);
+  for (int i = 0; i < numResources; i++) {
+    resources.add(new Resource());
   }
   
   // Initialize list of acquisition agents
@@ -52,7 +51,7 @@ void setup() {
   // Initialize list of predator agents
   predator = new ArrayList<Predator>(numPredator);
   for (int i = 0; i < numPredator; i++) {
-    predator.add(new Predator());
+    predator.add(new Predator(spawnX,spawnY,i,200));
   }
   
 }
