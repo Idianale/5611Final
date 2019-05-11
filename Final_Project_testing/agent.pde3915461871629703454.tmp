@@ -2,9 +2,9 @@ class Agent{
   PVector pos; 
   PVector vel; 
   PVector acc; 
-  float dir;
   float size;
-  float maxVelocity;
+  float speed = 10;
+  float dir;
   float[][] nodePos = new float[NODECOUNT][2];
   float[][] nodeCost = new float[NODECOUNT][NODECOUNT];
   IntList answer  = new IntList();
@@ -16,16 +16,14 @@ class Agent{
     vel = new PVector(0,0,0); 
     acc = new PVector(0,0,0); 
     dir = r.nextFloat()*360;
-    size = 20;
-    maxVelocity = 100;
   }
   
-  public void run(float dt){
-    update(dt); 
+  public void run(){
+    update(); 
     display(); 
   }
   
-  void update(float dt){
+  void update(){
   }
   
   void display(){
@@ -100,167 +98,30 @@ class Agent{
     return sqrt(dx*dx + dy*dy);
   }
   
-  
   // Calculates next node while moving along a path
   int nextNode;
-  int nodeRadius = 5;
   void calculateNextNode() {
     float dx, dy;
     // If at goal, do nothing
-    if (nextNode!=(answer.size()-1)) {
+    if (nextNode[i]!=(answer.size()-1)) {
       // Change nextNode to furthest visible node 
-      for (int j=(answer.size()-1); j>nextNode; j--) {
-        dx = (pos.x-nodePos[answer.get(j)][0]);
-        dy = (pos.y-nodePos[answer.get(j)][1]);
-        if (!agentNodePathCollision(j, sqrt(dx*dx + dy*dy))) {
-          nextNode = j;
+      for (int j=(answer.size()-1); j>nextNode[i]; j--) {
+        dx = (agentX[i]-nodePos[answer.get(j)][0]);
+        dy = (agentY[i]-nodePos[answer.get(j)][1]);
+        if (!agentNodePathCollision(i, j, sqrt(dx*dx + dy*dy))) {
+          nextNode[i] = j;
           break;
         }
       }     
 
       // If agent is within nodeRadius of node, go to next node
-      dx = (pos.x-nodePos[answer.get(nextNode)][0]);
-      dy = (pos.y-nodePos[answer.get(nextNode)][1]);
+      dx = (agentX[i]-nodePos[answer.get(nextNode[i])][0]);
+      dy = (agentY[i]-nodePos[answer.get(nextNode[i])][1]);
       if ( (dx*dx + dy*dy) < (nodeRadius*nodeRadius) ) {
-        nextNode++;
+        nextNode[i]++;
       }
     }
   }
-  boolean agentNodePathCollision(int node, float dist) {
-    int intervalCount = (int)(dist*10);
-    float intervalDirX = (nodePos[answer.get(node)][0]-pos.x)/intervalCount;
-    float intervalDirY = (nodePos[answer.get(node)][1]-pos.y)/intervalCount;
-    float intervalPosX = pos.x;
-    float intervalPosY = pos.y;
-    for (int k=0; k<intervalCount; k++) {
-      if (!validAgentCSpace(intervalPosX, intervalPosY)) return true;
-      intervalPosX += intervalDirX;
-      intervalPosY += intervalDirY;
-    }
-    return false;
-  }
-  
-  
-  // Calculates accelaration/forces
-  float goalDistance = resourceSize/2 + size/2;
-  void calculateForces() {
-    // Force Towards Goal
-    float tempGoalX = nodePos[answer.get(nextNode)][0];
-    float tempGoalY = nodePos[answer.get(nextNode)][1];
-    // If next node is the goal
-    if (nextNode==(answer.size()-1)) {
-      if (dist(tempGoalX, tempGoalY, pos.x, pos.y) > (goalDistance*2)) {
-        float tempX = dirX(pos.x, tempGoalX);
-        float tempY = dirY(pos.y, tempGoalY);
-        float tempTotal = sqrt(tempX*tempX + tempY*tempY);
-        if (tempTotal<(5/3)) {
-          acc.x += tempX*3;
-          acc.y += tempY*3;
-        } else {
-          acc.x += tempX/tempTotal*5;
-          acc.y += tempY/tempTotal*5;
-        }
-      } else {
-        float tempX = dirX(pos.x, tempGoalX);
-        float tempY = dirY(pos.y, tempGoalY);
-        float tempTotal = sqrt(tempX*tempX + tempY*tempY);
-        acc.x = tempX/tempTotal;
-        acc.y = tempY/tempTotal;
-      }
-    }
-  }
-  float dirX(float x1, float x2) {
-    return (x2-x1);
-  }
-  float dirY(float y1, float y2) {
-    return (y2-y1);
-  }
-  
-  
-  
-  // Calculates velocities for movement (capped by maxVelocity)
-  void calculateVelocities(float dt, boolean stopAtGoal) {
-    vel.x += (acc.x*dt);
-    vel.y += (acc.y*dt);
-
-    float agentVelocity = sqrt(vel.x*vel.x + vel.y*vel.y);
-    if (agentVelocity > maxVelocity) {
-      vel.x = vel.x/agentVelocity*maxVelocity;
-      vel.y = vel.y/agentVelocity*maxVelocity;
-    }
-    
-    if (stopAtGoal){
-      if (nextNode==(answer.size()-1)) {
-        float goalDistance = resourceSize/2 + size/2;
-        float tempGoalX = nodePos[answer.get(nextNode)][0];
-        float tempGoalY = nodePos[answer.get(nextNode)][1];
-        float dist = dist(tempGoalX, tempGoalY, pos.x, pos.y);
-        if (dist < goalDistance) {
-          if (dist < (goalDistance*0.8)) {
-            vel.x = 0;
-            vel.y = 0;
-          }
-          vel.x = vel.x*0.5;
-          vel.y = vel.y*0.5;
-        }
-      }
-    }
-  }
-  
-  // Calculate position for movement
-  void calculatePositions(float dt) {
-    pos.x += (vel.x*dt);
-    pos.y += (vel.y*dt);
-  }
-  
-  
-  // Calculate collisions
-  void calculateCollisions() {
-    float dx, dy, CRadius;
-    // Check for collision with obstacles
-    // If collision with obstacle, move agent to edge of obstacle
-    for (Obstacle obstacle : obstacles) {
-      dx = (pos.x - obstacle.position.x);
-      dy = (pos.y - obstacle.position.y);
-      CRadius = (obstacle.size/2 + size/2);
-      if ( (dx*dx + dy*dy) < (CRadius*CRadius) ) {
-        // Move agent to edge of obstacle
-        float tempX = pos.x - obstacle.position.x;
-        float tempY = pos.y - obstacle.position.y;
-        float totalTemp = sqrt(tempX*tempX + tempY*tempY);
-        pos.x = obstacle.position.x + tempX/totalTemp*(obstacle.size/2+size/2+1);
-        pos.y = obstacle.position.y + tempY/totalTemp*(obstacle.size/2+size/2+1);
-      }
-    }
-    // Check for collision with walls
-    if (pos.x < (size/2)) {  // Left Wall
-      pos.x = size/2 + 1;
-      if (vel.x < 0) vel.x = 1;
-    }
-    if (pos.x > (fieldWidth - size/2)) {  // Right Wall
-      pos.x = fieldWidth - size/2 - 1;
-      if (vel.x > 0) vel.x = -1;
-    }
-    if (pos.y < (size/2)) {  // Top Wall
-      pos.y = size/2 + 1;
-      if (vel.y < 0) vel.y = 1;
-    }
-    if (pos.y > (fieldHeight - size/2)) {  // Bottom Wall
-      pos.y = fieldHeight - size/2 - 1;
-      if (vel.y > 0) vel.y = -1;
-    }
-  }
-
-  // Calculate agent direction
-  void calculateRotations(float dt){
-    dir = atan2(vel.x, vel.y);
-    //float theta = atan2(vel.x, vel.y);
-    //float phi = sqrt(vel.x*vel.x + vel.y*vel.y);
-    //agentRotTheta[i]=theta; // TEST
-    //agentRotSpeed[i]+=phi*dt/agentRadius/2;
-    //if (agentRotSpeed[i] > radians(360)) agentRotSpeed[i] = agentRotSpeed[i] - radians(360);
-  }
-  
   
 }
 
@@ -277,11 +138,11 @@ class WorldState{
 
 class Acquisition extends Agent{
   Acquisition(){
-    size = 30;
+    this.size = 30;
     this.pos = new PVector(r.nextFloat()*fieldWidth,r.nextFloat()*fieldHeight,0);
   }
   Acquisition(float x, float y, int agentSpawned){
-    size = 30;
+    this.size = 30;
     float spawn_at_x, spawn_at_y;
     // Check for collision with previously spawned agents and obstacles
     boolean noCollision = true;
@@ -341,7 +202,6 @@ class Acquisition extends Agent{
   }
   
   // Find path to resource
-  // Always call LocateResource() before calling this function
   void FindPathToResource(Resource resource){
     for (int i=0; i<5; i++) {
       initializeNodes(resource.position.x, resource.position.y);
@@ -354,17 +214,15 @@ class Acquisition extends Agent{
   }
   
   // Move to resource along path stored in this.answer
-  // Call this function continuously
-  // Always call LocateResource() and FindPathToResource() before initially calling this function
-  void MoveToResource(float dt){
-    
+  void MoveToResource(){
+    /*
     calculateNextNode();
     calculateForces();
-    calculateVelocities(dt,true);
+    calculateVelocities(dt);
     calculatePositions(dt);
     calculateCollisions();
     calculateRotations(dt);
-    
+    */
   }
   
 }

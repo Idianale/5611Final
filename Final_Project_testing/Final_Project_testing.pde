@@ -130,11 +130,16 @@ void keyPressed() {
     reset();
   }
   
-  // Debug keyCodes
+  // Acquisition Debug keyCodes
   if (keyCode  == 'Q') {
     for (Acquisition acquisition : acquisition) {
       Resource resource = acquisition.LocateResource();
       if (resource != null) acquisition.FindPathToResource(resource);
+    }
+  }
+  if (keyCode  == 'W') {
+    for (Acquisition acquisition : acquisition) {
+      acquisition.MoveToResource(0.01);
     }
   }
 }
