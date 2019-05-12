@@ -5,7 +5,7 @@ static final int SAFE = 0, WARNING = 1, DANGER = 2;
 class BlackBoard {
     ArrayList<Resource> resources;
     ArrayList<Agent> collective;
-    PVector predLastSeen;
+    PVector predLastSeen = new PVector();
     final int status = 0;
 }
 
@@ -21,3 +21,6 @@ class State {
     State() {
     }
 }
+
+// temp
+PVector predLastSeen = new PVector();

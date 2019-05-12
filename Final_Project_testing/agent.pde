@@ -415,7 +415,7 @@ class Acquisition extends Agent {
         break;
       }
     }
-    nextNode[i] = 0;
+    nextNode = 0;
   }
 
   // Move to resource along path stored in this.answer
@@ -440,6 +440,35 @@ class Acquisition extends Agent {
       // Note: LocateResource
     }
   }
+  
+  // Moves away from predator
+  // Call this function each frame while fleeing from predator
+  void FleeFromPredator(float dt){
+    calculateFleeForces();
+    calculateVelocities(dt, true);
+    calculatePositions(dt);
+    calculateCollisions();
+    calculateRotations(dt);
+  }
+  void calculateFleeForces(){
+    float awayFromPredatorX = pos.x - predLastSeen.x;
+    float awayFromPredatorY = pos.y - predLastSeen.y;
+    if(awayFromPredatorX > 0) awayFromPredatorX = awayFromPredatorX/awayFromPredatorX*maxVelocity;
+    if(awayFromPredatorX < 0) awayFromPredatorX = awayFromPredatorX/-awayFromPredatorX*maxVelocity;
+    if(awayFromPredatorY > 0) awayFromPredatorY = awayFromPredatorY/awayFromPredatorY*maxVelocity;
+    if(awayFromPredatorY < 0) awayFromPredatorY = awayFromPredatorY/-awayFromPredatorY*maxVelocity;
+    
+    if (!withinArc(acc.x,acc.y,awayFromPredatorX,awayFromPredatorY,PI)){
+      acc.x = 0;
+      acc.y = 0;
+    }
+    else {
+      acc.x += awayFromPredatorX;
+      acc.y += awayFromPredatorY;
+    }
+  }
+  
+  
 }
 
 

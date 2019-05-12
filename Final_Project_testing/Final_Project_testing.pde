@@ -164,6 +164,14 @@ void keyPressed() {
       }
     }
   }
+  if (keyCode  == 'U') {
+    predLastSeen.x = mouseX;
+    predLastSeen.y = mouseY;
+    predLastSeen.z = 0;
+    for (Acquisition acquisition : acquisition) {
+        acquisition.FleeFromPredator(0.01);
+    }
+  }
 }
 
 // Reset Simulation
