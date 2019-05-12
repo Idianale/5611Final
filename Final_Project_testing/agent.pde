@@ -330,7 +330,7 @@ class Agent { //<>//
     float trianglePoint2 = abs((tx2-px)*(ty3-py) - (tx3-px)*(ty2-py));
     float trianglePoint3 = abs((tx3-px)*(ty1-py) - (tx1-px)*(ty3-py));
     float triangleArea = abs((tx2-tx1)*(ty3-ty1) - (tx3-tx1)*(ty2-ty1)); // Heron's Formula
-    if ((trianglePoint1 + trianglePoint2 + trianglePoint3) == triangleArea) {
+    if (int(trianglePoint1 + trianglePoint2 + trianglePoint3) == int(triangleArea)) {
       return true;
     } else return false;
   }
@@ -1139,13 +1139,10 @@ class Predator extends Agent {
   void calculateFleeForces(){
     // Avoid Recon
     for (Recon recon : recon) {
-      float maxDist = 1.25 * recon.visionLength;
+      float maxDist = (1.25 * recon.visionLength);
       if (dist(pos.x,pos.y,recon.pos.x,recon.pos.y) < maxDist){
-        float awayFromReconX = pos.x - recon.pos.x;
-        float awayFromReconY = pos.y - recon.pos.y;
-        print("test\n");
-        acc.x += (awayFromReconX*maxDist - awayFromReconX) *50;
-        acc.y += (awayFromReconY*maxDist - awayFromReconY) *50;
+        acc.x += (pos.x - recon.pos.x)*50;
+        acc.y += (pos.y - recon.pos.y)*50;
       }
     }
     // Collision Avoidance Forces
@@ -1201,7 +1198,5 @@ class Predator extends Agent {
     }
     return null;
   }
-
-
 
 }

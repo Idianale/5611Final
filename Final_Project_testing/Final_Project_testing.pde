@@ -71,6 +71,8 @@ void setup() {
 }
 
 void updateSim(double dt) {
+  print("PredatorSpotted",predatorSpotted(),"\n");
+  
 }
 
 
@@ -104,7 +106,7 @@ void drawSim() {
   }
   // END DEBUG CODE*/
   
-  // RECON PATHS DEBUGGING CODE
+  /*// RECON PATHS DEBUGGING CODE
   for (Recon recon : recon){
     // Render Possible Paths
     strokeWeight(1);
@@ -128,7 +130,7 @@ void drawSim() {
       }
     }
   }
-  // END DEBUG CODE
+  // END DEBUG CODE*/
   
   
   // Display environment
@@ -261,6 +263,24 @@ void keyPressed() {
   
 }
 float time = 60;
+
+
+boolean predatorSpotted(){
+  for (Recon recon : recon){
+    for (Predator predator : predator){
+      for (float i=0; i<(2*PI); i+=(PI/8)){
+        if (predator.trianglePointCollision(
+              recon.pos.x,    recon.pos.y,
+              recon.visionX1, recon.visionY1,
+              recon.visionX2, recon.visionY2,
+              predator.pos.x+(cos(predator.dir)*predator.size/2),
+              predator.pos.y+(sin(predator.dir)*predator.size/2))) return true;
+      }
+    }
+  }
+  return false;
+}
+
 
 // Reset Simulation
 void reset(){
