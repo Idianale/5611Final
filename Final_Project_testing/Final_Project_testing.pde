@@ -218,6 +218,19 @@ void keyPressed() {
       recon.MoveToDestination(0.01);
     }
   }
+  if (keyCode  == 'D') {
+    predLastSeen.x = mouseX;
+    predLastSeen.y = mouseY;
+    predLastSeen.z = 0;
+    for (Recon recon : recon) {
+        recon.FindPathToPredator();
+    }
+  }
+  if (keyCode  == 'E') {
+    for (Recon recon : recon) {
+      recon.SearchForPredator(300);
+    }
+  }
   
 }
 

@@ -557,7 +557,7 @@ class Recon extends Agent {
     this.size = 20;
     maxVelocity = 200;
     this.pos = new PVector(r.nextFloat()*fieldWidth, r.nextFloat()*fieldHeight, 0);
-    visionLength = 50;
+    visionLength = 150;
     visionX1 = pos.x + sin(dir-PI/8)*visionLength;
     visionY1 = pos.y + cos(dir-PI/8)*visionLength;
     visionX2 = pos.x + sin(dir+PI/8)*visionLength;
@@ -604,7 +604,7 @@ class Recon extends Agent {
     }
     // If no viable position near herd, spawn location is random
     if (!noCollision) this.pos = new PVector(r.nextFloat()*fieldWidth, r.nextFloat()*fieldHeight, 0);
-    visionLength = 100;
+    visionLength = 150;
     visionX1 = pos.x + sin(dir-PI/8)*visionLength;
     visionY1 = pos.y + cos(dir-PI/8)*visionLength;
     visionX2 = pos.x + sin(dir+PI/8)*visionLength;
@@ -738,6 +738,56 @@ class Recon extends Agent {
     return null;
   }
   
+  
+  // Create path to last known predator location
+  // Call once when predator is located, then chase predator with MoveToDestination()
+  void FindPathToPredator(){
+    for (int i=0; i<10; i++) {
+      initializeNodes(predLastSeen.x, predLastSeen.y);
+      calcNodeCostMatrix();
+      if (search(this)) {
+        answerFound = true;
+        break;
+      }
+    }
+    nextNode = 0;
+  }
+
+  
+  // Search for Predator when in WARNING status but predator location is unknown
+  // Call once per search attempt
+  // Call MoveToDestination() after running this function
+  // Note: Default Radius 300? Maybe  each search attempt can have a larger radius?
+  void SearchForPredator(float searchRadius){
+    boolean locationSelected;
+    float potentialX, potentialY;
+    while(true){
+      locationSelected = true;
+      potentialX = r.nextFloat()*fieldWidth;
+      potentialY = r.nextFloat()*fieldHeight;
+      // Check if in valid space 
+      if (!validAgentCSpace(potentialX,potentialY)) locationSelected = false;
+      // Check if within radius of predLastSeen
+      if (locationSelected){
+        if (dist(potentialX, potentialY, predLastSeen.x, predLastSeen.y) > searchRadius){
+          locationSelected = false;
+        }
+      }
+      if (locationSelected){
+        // If location is selected, create path to location
+        for (int i=0; i<10; i++) {
+          initializeNodes(predLastSeen.x, predLastSeen.y);
+          calcNodeCostMatrix();
+          if (search(this)) {
+            answerFound = true;
+            break;
+          }
+        }
+        nextNode = 0;
+        break;
+      }
+    }
+  }
   
 }
 
