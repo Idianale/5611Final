@@ -818,12 +818,12 @@ class Recon extends Agent {
 class Predator extends Agent {
   Predator() {
     this.size = 20;
-    maxVelocity = 100;
+    maxVelocity = 200;
     this.pos = new PVector(r.nextFloat()*fieldWidth, r.nextFloat()*fieldHeight, 0);
   }
   Predator(float herdX, float herdY, int agentSpawned, float minDistFromHerd) {
     this.size = 20;
-    maxVelocity = 100;
+    maxVelocity = 200;
 
     float spawn_at_x, spawn_at_y, dist_x, dist_y;
     // Check for collision with previously spawned agents and obstacles
@@ -884,4 +884,38 @@ class Predator extends Agent {
     ellipse(this.pos.x, this.pos.y, this.size, this.size);
     noFill();
   }
+  
+  // Behavior
+  /*
+  // Chooses target acquision agent
+  // Call once every handful of frames (once per second?)
+  Acquisition target = null;
+  Acquisition prevTarget = null;
+  void ChooseTarget(){    
+  }
+  
+  // Chooses path to target
+  // Call once when (target != prevTarget) or when (SafePath()) returns false
+  void ChoosePathToTarget(){
+  }
+  
+  // Follow path to target
+  // Call every frame when following path to target
+  void FollowPathToTarget(){
+  }
+  // Is the probability of getting caught by recon on the chosen path low enough?
+  boolean SafePath(){ 
+  }
+  
+  // Flee from all nearby recon agents
+  // Call every frame once detected
+  // Return to normal behavior once at reasonable distance
+  void FleeFromRecon(){
+  }
+
+  
+  */
+   
+  
+  
 }
