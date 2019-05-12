@@ -43,8 +43,8 @@ class Resource {
     boolean isColliding;
     while(true){
       isColliding = false;
-      spawn_at_x = r.nextFloat()*fieldWidth;
-      spawn_at_y = r.nextFloat()*fieldHeight;
+      spawn_at_x = fieldWidth*0.02 + r.nextFloat()*fieldWidth*0.96;
+      spawn_at_y = fieldWidth*0.02 + r.nextFloat()*fieldHeight*0.96;
       for (Obstacle obstacle : obstacles) {
         if (obstacle.obstacleCollision(spawn_at_x,spawn_at_y,resourceSize)){
           isColliding = true;

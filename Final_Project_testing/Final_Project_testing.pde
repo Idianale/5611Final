@@ -226,7 +226,7 @@ void keyPressed() {
         recon.FindPathToPredator();
     }
   }
-  if (keyCode  == 'E') {
+  if (keyCode  == 'F') {
     for (Recon recon : recon) {
       recon.SearchForPredator(300);
     }

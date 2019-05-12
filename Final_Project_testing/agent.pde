@@ -150,7 +150,7 @@ class Agent {
 
 
   // Calculates accelaration/forces
-  float goalDistance = resourceSize/2 + size/2;
+  float goalDistanceThreshold = resourceSize/2 + size/2;
   void calculateForces() {
     // Calculate Force Towards Goal
     float tempGoalX = nodePos[answer.get(nextNode)][0];
@@ -175,7 +175,7 @@ class Agent {
     }
     // If next node is the goal
     if (nextNode==(answer.size()-1)) {
-      if (dist(tempGoalX, tempGoalY, pos.x, pos.y) > (goalDistance)) {
+      if (dist(tempGoalX, tempGoalY, pos.x, pos.y) > (goalDistanceThreshold)) {
         if (tempTotal<(5/3)) {
           acc.x += tempX*3;
           acc.y += tempY*3;
@@ -442,11 +442,29 @@ class Acquisition extends Agent {
   // Always call LocateResource() and FindPathToResource() before initially calling this function
   void MoveToResource(float dt) {
     calculateNextNode();
-    calculateForces();
+    calculateAcquisitionForces();
     calculateVelocities(dt, true);
     calculatePositions(dt);
     calculateCollisions();
     calculateRotations(dt);
+  }
+  void calculateAcquisitionForces(){
+    calculateForces();
+    // Force away from nearby acquisiton agents
+    for (Acquisition acquisition : acquisition) {
+      if (acquisition!=this){
+        if (dist(pos.x, pos.y, acquisition.pos.x, acquisition.pos.y)<size){
+          float dir_x = pos.x - acquisition.pos.x;
+          if (dir_x > 0) dir_x = dir_x/dir_x;
+          if (dir_x < 0) dir_x = dir_x/-dir_x;
+          float dir_y = pos.y - acquisition.pos.y;
+          if (dir_y > 0) dir_y = dir_y/dir_y;
+          if (dir_y < 0) dir_y = dir_y/-dir_y;
+          acc.x+=dir_x*maxVelocity;
+          acc.y+=dir_y*maxVelocity;
+        }
+      }
+    }
   }
 
   // Gradually deplete resource
@@ -757,7 +775,7 @@ class Recon extends Agent {
   // Search for Predator when in WARNING status but predator location is unknown
   // Call once per search attempt
   // Call MoveToDestination() after running this function
-  // Note: Default Radius 300? Maybe  each search attempt can have a larger radius?
+  // Note: Default Radius 300? Maybe only attempt so acquisition agents aren't left alone
   void SearchForPredator(float searchRadius){
     boolean locationSelected;
     float potentialX, potentialY;
@@ -776,7 +794,7 @@ class Recon extends Agent {
       if (locationSelected){
         // If location is selected, create path to location
         for (int i=0; i<10; i++) {
-          initializeNodes(predLastSeen.x, predLastSeen.y);
+          initializeNodes(potentialX, potentialY);
           calcNodeCostMatrix();
           if (search(this)) {
             answerFound = true;
