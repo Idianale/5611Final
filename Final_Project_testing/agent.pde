@@ -1,56 +1,57 @@
-class Agent{
+class Agent {
   PVector pos; 
   PVector vel; 
   PVector acc; 
   float dir;
   float size;
   float maxVelocity;
+  float visionLength;
+  float visionX1, visionY1, visionX2, visionY2;
   float[][] nodePos = new float[NODECOUNT][2];
   float[][] nodeCost = new float[NODECOUNT][NODECOUNT];
   IntList answer  = new IntList();
   boolean answerFound = false;
   WorldState ws; 
-  
-  Agent(){
-    pos = new PVector(190,110,0);
-    vel = new PVector(0,0,0); 
-    acc = new PVector(0,0,0); 
+
+  Agent() {
+    pos = new PVector(190, 110, 0);
+    vel = new PVector(0, 0, 0); 
+    acc = new PVector(0, 0, 0); 
     dir = r.nextFloat()*360;
     size = 20;
     maxVelocity = 100;
   }
-  
-  public void run(float dt){
+
+  public void run(float dt) {
     update(dt); 
-    display(); 
+    display();
   }
-  
-  void update(float dt){
+
+  void update(float dt) {
   }
-  
-  void display(){
+
+  void display() {
   }
-  
+
   // Return true if spawn coordinate collides with agent
-  boolean spawnCollisionAgent(float x, float y, float size, Agent agent){
+  boolean spawnCollisionAgent(float x, float y, float size, Agent agent) {
     float dist_x = x - agent.pos.x;
     float dist_y = y - agent.pos.y;
     float dist = sqrt( (dist_x*dist_x) + (dist_y*dist_y) );
-    if (dist < (agent.size/2+size/2)){
+    if (dist < (agent.size/2+size/2)) {
       return true;
-    }
-    else return false;
+    } else return false;
   }
-  
-  boolean validAgentCSpace(float x, float y){
+
+  boolean validAgentCSpace(float x, float y) {
     for (Obstacle obstacle : obstacles) {
-      if (obstacle.obstacleCollision(x, y, this.size)){
+      if (obstacle.obstacleCollision(x, y, this.size)) {
         return false;
       }
     }
     return true;
   }
-  
+
   void initializeNodes(float goalX, float goalY) {
     nodePos[0][0] = this.pos.x;
     nodePos[0][1] = this.pos.y;
@@ -70,7 +71,7 @@ class Agent{
       }
     }
   }
-  
+
   // If a line from node i to j does not collide with anything in the agent C-Space, 
   // then nodeCost[i][j] contains the distance between i and j. Otherwise, nodeCost[i][j] contains Infinity.
   void calcNodeCostMatrix() {
@@ -99,8 +100,8 @@ class Agent{
     float dy = nodePos[i][1]-nodePos[j][1];
     return sqrt(dx*dx + dy*dy);
   }
-  
-  
+
+
   // Calculates next node while moving along a path
   int nextNode;
   int nodeRadius = 5;
@@ -139,8 +140,8 @@ class Agent{
     }
     return false;
   }
-  
-  
+
+
   // Calculates accelaration/forces
   float goalDistance = resourceSize/2 + size/2;
   void calculateForces() {
@@ -175,9 +176,9 @@ class Agent{
   float dirY(float y1, float y2) {
     return (y2-y1);
   }
-  
-  
-  
+
+
+
   // Calculates velocities for movement (capped by maxVelocity)
   void calculateVelocities(float dt, boolean stopAtGoal) {
     vel.x += (acc.x*dt);
@@ -188,8 +189,8 @@ class Agent{
       vel.x = vel.x/agentVelocity*maxVelocity;
       vel.y = vel.y/agentVelocity*maxVelocity;
     }
-    
-    if (stopAtGoal){
+
+    if (stopAtGoal) {
       if (nextNode==(answer.size()-1)) {
         float goalDistance = resourceSize/2 + size/2;
         float tempGoalX = nodePos[answer.get(nextNode)][0];
@@ -206,14 +207,14 @@ class Agent{
       }
     }
   }
-  
+
   // Calculate position for movement
   void calculatePositions(float dt) {
     pos.x += (vel.x*dt);
     pos.y += (vel.y*dt);
   }
-  
-  
+
+
   // Calculate collisions
   void calculateCollisions() {
     float dx, dy, CRadius;
@@ -252,77 +253,99 @@ class Agent{
   }
 
   // Calculate agent direction
-  void calculateRotations(float dt){
-    dir = atan2(vel.x, vel.y);
+  void calculateRotations(float dt) {
+    if ((vel.x!=0)&&(vel.y!=0)) dir = atan2(vel.x, vel.y);
+    visionX1 = pos.x + sin(dir-PI/8)*visionLength;
+    visionY1 = pos.y + cos(dir-PI/8)*visionLength;
+    visionX2 = pos.x + sin(dir+PI/8)*visionLength;
+    visionY2 = pos.y + cos(dir+PI/8)*visionLength;
+    //// Commented out code is only for rendering agents as rolling spheres
     //float theta = atan2(vel.x, vel.y);
     //float phi = sqrt(vel.x*vel.x + vel.y*vel.y);
     //agentRotTheta[i]=theta; // TEST
     //agentRotSpeed[i]+=phi*dt/agentRadius/2;
     //if (agentRotSpeed[i] > radians(360)) agentRotSpeed[i] = agentRotSpeed[i] - radians(360);
   }
-  
-  
 }
 
-class WorldState{
-  WorldState(){
-  }; 
+class WorldState {
+  WorldState() {
+  };
 }
 
 /*
 =========================================
-               ACQUISITION               
-=========================================
-*/
+ ACQUISITION               
+ =========================================
+ */
 
-class Acquisition extends Agent{
-  Acquisition(){
+class Acquisition extends Agent {
+  Acquisition() {
     size = 30;
-    this.pos = new PVector(r.nextFloat()*fieldWidth,r.nextFloat()*fieldHeight,0);
+    this.pos = new PVector(r.nextFloat()*fieldWidth, r.nextFloat()*fieldHeight, 0);
+    visionLength = 50;
+    visionX1 = pos.x + sin(dir-PI/8)*visionLength;
+    visionY1 = pos.y + cos(dir-PI/8)*visionLength;
+    visionX2 = pos.x + sin(dir+PI/8)*visionLength;
+    visionY2 = pos.y + cos(dir+PI/8)*visionLength;
   }
-  Acquisition(float x, float y, int agentSpawned){
+  Acquisition(float x, float y, int agentSpawned) {
     size = 30;
     float spawn_at_x, spawn_at_y;
     // Check for collision with previously spawned agents and obstacles
     boolean noCollision = true;
-    for (int s=1; s<15; s++){
+    for (int s=1; s<15; s++) {
       noCollision = true;
       spawn_at_x = (x-size/2*s)+(r.nextFloat()*size*s);
       spawn_at_y = (y-size/2*s)+(r.nextFloat()*size*s);
       // Check for collision with other acquisition agents
-      for (int i=0; i<agentSpawned; i++){
-        if (this.spawnCollisionAgent(spawn_at_x, spawn_at_y, this.size, acquisition.get(i))){
+      for (int i=0; i<agentSpawned; i++) {
+        if (this.spawnCollisionAgent(spawn_at_x, spawn_at_y, this.size, acquisition.get(i))) {
           noCollision = false;
           break;
         }
       }
       // Check for collision with obstacles
-      if (noCollision){
-        for (int i=0; i<obstacles.size(); i++){
-          if (obstacles.get(i).obstacleCollision(spawn_at_x, spawn_at_y, this.size)){
+      if (noCollision) {
+        for (int i=0; i<obstacles.size(); i++) {
+          if (obstacles.get(i).obstacleCollision(spawn_at_x, spawn_at_y, this.size)) {
             noCollision = false;
             break;
           }
         }
       }
-      if (noCollision){
-        this.pos = new PVector(spawn_at_x,spawn_at_y,0);
+      if (noCollision) {
+        this.pos = new PVector(spawn_at_x, spawn_at_y, 0);
         break;
       }
     }
     // If no viable position near herd, spawn location is random
-    if (!noCollision) this.pos = new PVector(r.nextFloat()*fieldWidth,r.nextFloat()*fieldHeight,0);
-  }  
+    if (!noCollision) this.pos = new PVector(r.nextFloat()*fieldWidth, r.nextFloat()*fieldHeight, 0);
+    visionLength = 50;
+    visionX1 = pos.x + sin(dir-PI/8)*visionLength;
+    visionY1 = pos.y + cos(dir-PI/8)*visionLength;
+    visionX2 = pos.x + sin(dir+PI/8)*visionLength;
+    visionY2 = pos.y + cos(dir+PI/8)*visionLength;
+  } 
+
   void display() {
+    // Draw Agent
     fill(50, 150, 50);
-    ellipse(this.pos.x,this.pos.y,this.size,this.size);
+    ellipse(this.pos.x, this.pos.y, this.size, this.size);
     noFill();
   }
-  
-  // behaviors
-  
+  void displayCone(){
+    // Draw Vision Cone
+    fill(50,150,50,100);
+    triangle(this.pos.x, this.pos.y, visionX1, visionY1, visionX2, visionY2);
+    noFill();
+  }
+
+  // Behaviors
+
   // Find and return the closest nondepleted resource
-  Resource LocateResource(){
+  // Pass the ouput to FindPathToResource(resource)
+  Resource LocateResource() {
     float shortestDistance = Float.POSITIVE_INFINITY;
     Resource closestResource = null;
     float dist_x, dist_y, dist;
@@ -331,7 +354,7 @@ class Acquisition extends Agent{
         dist_x = this.pos.x - resource.position.x;
         dist_y = this.pos.y - resource.position.y;
         dist = sqrt((dist_x*dist_x) + (dist_y*dist_y));
-        if (dist < shortestDistance){
+        if (dist < shortestDistance) {
           shortestDistance = dist;
           closestResource = resource;
         }
@@ -339,10 +362,10 @@ class Acquisition extends Agent{
     }
     return closestResource;
   }
-  
+
   // Find path to resource
-  // Always call LocateResource() before calling this function
-  void FindPathToResource(Resource resource){
+  // Pass resource from LocateResource() to this function
+  void FindPathToResource(Resource resource) {
     for (int i=0; i<5; i++) {
       initializeNodes(resource.position.x, resource.position.y);
       calcNodeCostMatrix();
@@ -352,101 +375,109 @@ class Acquisition extends Agent{
       }
     }
   }
-  
+
   // Move to resource along path stored in this.answer
-  // Call this function continuously
+  // Call this function each frame while moving towards resource
   // Always call LocateResource() and FindPathToResource() before initially calling this function
-  void MoveToResource(float dt){
-    
+  void MoveToResource(float dt) {
+
     calculateNextNode();
     calculateForces();
-    calculateVelocities(dt,true);
+    calculateVelocities(dt, true);
     calculatePositions(dt);
     calculateCollisions();
     calculateRotations(dt);
-    
   }
-  
 }
 
 /*
 ===================================
-               RECON               
-===================================
-*/
+ RECON               
+ ===================================
+ */
 
-class Recon extends Agent{
-  Recon(){
+class Recon extends Agent {
+  Recon() {
     this.size = 20;
-    this.pos = new PVector(r.nextFloat()*fieldWidth,r.nextFloat()*fieldHeight,0);
+    this.pos = new PVector(r.nextFloat()*fieldWidth, r.nextFloat()*fieldHeight, 0);
+    visionLength = 50;
+    visionX1 = pos.x + sin(dir-PI/8)*visionLength;
+    visionY1 = pos.y + cos(dir-PI/8)*visionLength;
+    visionX2 = pos.x + sin(dir+PI/8)*visionLength;
+    visionY2 = pos.y + cos(dir+PI/8)*visionLength;
   }
-  Recon(float x, float y, int agentSpawned){
+  Recon(float x, float y, int agentSpawned) {
     this.size = 20;
     float spawn_at_x, spawn_at_y;
     // Check for collision with previously spawned agents and obstacles
     boolean noCollision = true;
-    for (int s=5; s<20; s++){
+    for (int s=5; s<20; s++) {
       noCollision = true;
       spawn_at_x = (x-size/2*s)+(r.nextFloat()*size*s);
       spawn_at_y = (y-size/2*s)+(r.nextFloat()*size*s);
       // Check for collision with other recon agents
-      for (int i=0; i<agentSpawned; i++){
-        if (this.spawnCollisionAgent(spawn_at_x, spawn_at_y, this.size, recon.get(i))){
+      for (int i=0; i<agentSpawned; i++) {
+        if (this.spawnCollisionAgent(spawn_at_x, spawn_at_y, this.size, recon.get(i))) {
           noCollision = false;
           break;
         }
       }
       // Check for collision with acquisition agents
-      if (noCollision){
-        for (int i=0; i<acquisition.size(); i++){
-          if (this.spawnCollisionAgent(spawn_at_x, spawn_at_y, this.size, acquisition.get(i))){
+      if (noCollision) {
+        for (int i=0; i<acquisition.size(); i++) {
+          if (this.spawnCollisionAgent(spawn_at_x, spawn_at_y, this.size, acquisition.get(i))) {
             noCollision = false;
             break;
           }
         }
       }
       // Check for collision with obstacles
-      if (noCollision){
-        for (int i=0; i<obstacles.size(); i++){
-          if (obstacles.get(i).obstacleCollision(spawn_at_x, spawn_at_y, this.size)){
+      if (noCollision) {
+        for (int i=0; i<obstacles.size(); i++) {
+          if (obstacles.get(i).obstacleCollision(spawn_at_x, spawn_at_y, this.size)) {
             noCollision = false;
             break;
           }
         }
       }
-      if (noCollision){
-        this.pos = new PVector(spawn_at_x,spawn_at_y,0);
+      if (noCollision) {
+        this.pos = new PVector(spawn_at_x, spawn_at_y, 0);
         break;
       }
     }
     // If no viable position near herd, spawn location is random
-    if (!noCollision) this.pos = new PVector(r.nextFloat()*fieldWidth,r.nextFloat()*fieldHeight,0);
+    if (!noCollision) this.pos = new PVector(r.nextFloat()*fieldWidth, r.nextFloat()*fieldHeight, 0);
+    visionLength = 50;
+    visionX1 = pos.x + sin(dir-PI/8)*visionLength;
+    visionY1 = pos.y + cos(dir-PI/8)*visionLength;
+    visionX2 = pos.x + sin(dir+PI/8)*visionLength;
+    visionY2 = pos.y + cos(dir+PI/8)*visionLength;
   }
   void display() {
     fill(50, 50, 150);
-    ellipse(this.pos.x,this.pos.y,this.size,this.size);
+    ellipse(this.pos.x, this.pos.y, this.size, this.size);
     noFill();
   }
 }
 
 /*
 ======================================
-               PREDATOR               
-======================================
-*/
+ PREDATOR               
+ ======================================
+ */
 
-class Predator extends Agent{
-  Predator(){
+class Predator extends Agent {
+  Predator() {
     this.size = 20;
-    this.pos = new PVector(r.nextFloat()*fieldWidth,r.nextFloat()*fieldHeight,0);
+    this.pos = new PVector(r.nextFloat()*fieldWidth, r.nextFloat()*fieldHeight, 0);
   }
-  Predator(float herdX, float herdY, int agentSpawned, float minDistFromHerd){
+  Predator(float herdX, float herdY, int agentSpawned, float minDistFromHerd) {
     this.size = 20;
-    
+
     float spawn_at_x, spawn_at_y, dist_x, dist_y;
     // Check for collision with previously spawned agents and obstacles
     boolean noCollision = true;
-    for (int s=0; s<20; s++){
+    for (int s=0; s<20; s++) {
       noCollision = true;
       spawn_at_x = r.nextFloat()*fieldWidth;
       spawn_at_y = r.nextFloat()*fieldHeight;
@@ -455,51 +486,51 @@ class Predator extends Agent{
       dist_y = spawn_at_y - herdY;
       if (sqrt((dist_x*dist_x) + (dist_y*dist_y)) < minDistFromHerd) noCollision = false;
       // Check for collision with other predators
-      if (noCollision){
-        for (int i=0; i<agentSpawned; i++){
-          if (this.spawnCollisionAgent(spawn_at_x, spawn_at_y, this.size, predator.get(i))){
+      if (noCollision) {
+        for (int i=0; i<agentSpawned; i++) {
+          if (this.spawnCollisionAgent(spawn_at_x, spawn_at_y, this.size, predator.get(i))) {
             noCollision = false;
             break;
           }
         }
       }
       // Check for collision with acquisition agents
-      if (noCollision){
-        for (int i=0; i<acquisition.size(); i++){
-          if (this.spawnCollisionAgent(spawn_at_x, spawn_at_y, this.size, acquisition.get(i))){
+      if (noCollision) {
+        for (int i=0; i<acquisition.size(); i++) {
+          if (this.spawnCollisionAgent(spawn_at_x, spawn_at_y, this.size, acquisition.get(i))) {
             noCollision = false;
             break;
           }
         }
       }
       // Check for collision with recon agents
-      if (noCollision){
-        for (int i=0; i<recon.size(); i++){
-          if (this.spawnCollisionAgent(spawn_at_x, spawn_at_y, this.size, recon.get(i))){
+      if (noCollision) {
+        for (int i=0; i<recon.size(); i++) {
+          if (this.spawnCollisionAgent(spawn_at_x, spawn_at_y, this.size, recon.get(i))) {
             noCollision = false;
             break;
           }
         }
       }
       // Check for collision with obstacles
-      if (noCollision){
-        for (int i=0; i<obstacles.size(); i++){
-          if (obstacles.get(i).obstacleCollision(spawn_at_x, spawn_at_y, this.size)){
+      if (noCollision) {
+        for (int i=0; i<obstacles.size(); i++) {
+          if (obstacles.get(i).obstacleCollision(spawn_at_x, spawn_at_y, this.size)) {
             noCollision = false;
             break;
           }
         }
       }
-      if (noCollision){
-        this.pos = new PVector(spawn_at_x,spawn_at_y,0);
+      if (noCollision) {
+        this.pos = new PVector(spawn_at_x, spawn_at_y, 0);
         break;
       }
     }
   }
-  
+
   void display() {
     fill(150, 50, 50);
-    ellipse(this.pos.x,this.pos.y,this.size,this.size);
+    ellipse(this.pos.x, this.pos.y, this.size, this.size);
     noFill();
   }
 }

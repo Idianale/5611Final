@@ -15,7 +15,7 @@ float fieldWidth = 1000;
 float resourceSize = 17;
 int numObstacles = 3;
 int numResources = 50;
-int numRecon = 4;
+int numRecon = 3;
 int numAcquisition = 4;
 int numPredator = 1;
 
@@ -73,23 +73,10 @@ void setup() {
 void updateSim(double dt) {
 }
 
+
+
 void drawSim() {
   background(200,200,200);
-  for (Resource resource : resources) {
-    resource.Draw();
-  }
-  for (Recon recon : recon) {
-    recon.display();
-  }
-  for (Acquisition acquisition : acquisition) {
-    acquisition.display();
-  }
-  for (Predator predator : predator) {
-    predator.display();
-  }
-  for (Obstacle obstacle : obstacles) {
-    obstacle.Draw();
-  }
   
   // TODO: REMOVE FOLLOWING DEBUG CODE
   for (Acquisition acquisition : acquisition){
@@ -115,7 +102,28 @@ void drawSim() {
       }
     }
   }
+  // END DEBUG CODE
   
+  // Display objects
+  for (Resource resource : resources) {
+    resource.Draw();
+  }
+  for (Recon recon : recon) {
+    recon.display();
+  }
+  for (Acquisition acquisition : acquisition) {
+    acquisition.display();
+  }
+  for (Predator predator : predator) {
+    predator.display();
+  }
+  for (Obstacle obstacle : obstacles) {
+    obstacle.Draw();
+  }
+  // Display 
+  for (Acquisition acquisition : acquisition) {
+    acquisition.displayCone();
+  }
 }
 
 void draw() {
