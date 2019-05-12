@@ -396,7 +396,7 @@ class Acquisition extends Agent {
   // Behaviors
 
   // Find the closest nondepleted resource
-  // Save the resource under variable targetResource
+  // Saves the resource under variable targetResource
   // Find path to this resource using FindPathToResource
   void LocateResource() {
     float shortestDistance = Float.POSITIVE_INFINITY;
@@ -453,7 +453,7 @@ class Acquisition extends Agent {
     }
   }
   
-  // Moves away from predator
+  // Moves away from predator's last seen location
   // Call this function each frame while fleeing from predator
   void FleeFromPredator(float dt){
     calculateFleeForces();
@@ -495,6 +495,7 @@ class Acquisition extends Agent {
   }
   void collisionForce(float collisionDistance) {  // Collision Avoidance Forces
     float totalVelocity = sqrt(vel.x*vel.x + vel.y*vel.y);
+    if (totalVelocity == 0) totalVelocity = 0.01;
     float aheadX = pos.x + (vel.x/totalVelocity*collisionDistance);
     float aheadY = pos.y + (vel.y/totalVelocity*collisionDistance);
     Obstacle obstacle = aheadCollision(pos.x, pos.y, aheadX, aheadY, collisionDistance);
@@ -529,11 +530,7 @@ class Acquisition extends Agent {
     }
     return null;
   }
-  
-  
 }
-
-
 
 
 
@@ -617,6 +614,43 @@ class Recon extends Agent {
   
   // Behaviors
   
+  // Find a "good" patrol destination
+  // Call once before FindPatrolPath();
+  // Prioritizes location near gatherers but further from other recon agents
+  
+  void FindPatrolDestination(){
+    float potentialX, potentialY;
+    boolean locationFound;
+    float maxAcquisitionDistance = 200;
+    float minReconDistance = 100;
+    while(true){
+      locationFound = true;
+      potentialX = r.nextFloat()*fieldWidth;
+      potentialY = r.nextFloat()*fieldHeight;
+      // Check if within max distance from acquisition
+      if (locationFound) {
+        for (Acquisition acquisition : acquisition) {
+          if (dist(pos.x, pos.y, acquisition.pos.x, acquisition.pos.y) < maxAcquisitionDistance){
+            locationFound = false;
+            maxAcquisitionDistance += 20;
+            break;
+          }
+        }          
+      }
+      // Check if at least min distance from other recon
+      if (locationFound) {
+        for (Recon recon : recon) {
+          if (recon!=this){
+            if (dist(pos.x, pos.y, recon.pos.x, recon.pos.y) > minReconDistance){
+              locationFound = false;
+              minReconDistance += 20;
+              break;
+            }
+          }
+        }          
+      }
+    }
+  }
   
   
 }

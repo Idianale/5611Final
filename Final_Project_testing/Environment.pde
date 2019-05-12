@@ -1,4 +1,3 @@
-// TODO: Implement resource depletion using resource.quantity
 
 class Obstacle{
   PVector position; 

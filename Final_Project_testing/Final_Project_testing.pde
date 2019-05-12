@@ -78,7 +78,7 @@ void updateSim(double dt) {
 void drawSim() {
   background(200,200,200);
   
-  // TODO: REMOVE FOLLOWING DEBUG CODE
+  /*// ACQUISITION PATHS DEBUGGING CODE
   for (Acquisition acquisition : acquisition){
     // Render Possible Paths
     strokeWeight(1);
@@ -102,12 +102,17 @@ void drawSim() {
       }
     }
   }
-  // END DEBUG CODE
+  // END DEBUG CODE*/
   
-  // Display objects
+  // Display environment
   for (Resource resource : resources) {
     resource.Draw();
   }
+  for (Obstacle obstacle : obstacles) {
+    obstacle.Draw();
+  }
+  
+  // Display agents
   for (Acquisition acquisition : acquisition) {
     acquisition.display();
   }
@@ -117,15 +122,13 @@ void drawSim() {
   for (Predator predator : predator) {
     predator.display();
   }
-  for (Obstacle obstacle : obstacles) {
-    obstacle.Draw();
-  }
+  
   // Display 
   for (Acquisition acquisition : acquisition) {
     acquisition.displayCone();
   }
   for (Recon recon : recon) {
-    recon.display();
+    recon.displayCone();
   }
 }
 
@@ -175,6 +178,9 @@ void keyPressed() {
         acquisition.FleeFromPredator(0.01);
     }
   }
+  
+  // Acquisition Debug keyCodes
+  
 }
 
 // Reset Simulation
