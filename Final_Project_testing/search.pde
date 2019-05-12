@@ -24,7 +24,7 @@ boolean search(Agent agent) {
   // A* Search
   float startTime, currentTime, timeLimit;  // Prevents A* search from taking too long
   startTime = millis();
-  timeLimit = 5;
+  timeLimit = 4;
   while (true) {
     for (int j=0; j<NODECOUNT; j++) {
       currentTime = millis(); if (currentTime-startTime > timeLimit) {print("}:");return false;} 

@@ -104,6 +104,33 @@ void drawSim() {
   }
   // END DEBUG CODE*/
   
+  // RECON PATHS DEBUGGING CODE
+  for (Recon recon : recon){
+    // Render Possible Paths
+    strokeWeight(1);
+    stroke(20, 50, 100);
+    for (int i=0; i<NODECOUNT; i++) {
+      for (int j=0; j<NODECOUNT; j++) {
+        if (recon.nodeCost[i][j]!=Float.POSITIVE_INFINITY) {
+          line(recon.nodePos[i][0], recon.nodePos[i][1], 
+               recon.nodePos[j][0], recon.nodePos[j][1]);
+        }
+      }
+    }
+    for (int i=0; i<(recon.answer.size()-1); i++) {
+      if (recon.answer.size() > 1){
+        stroke(100, 150, 255);
+        strokeWeight(3);
+        line(recon.nodePos[recon.answer.get(i)][0],
+             recon.nodePos[recon.answer.get(i)][1],
+             recon.nodePos[recon.answer.get(i+1)][0],
+             recon.nodePos[recon.answer.get(i+1)][1]);
+      }
+    }
+  }
+  // END DEBUG CODE
+  
+  
   // Display environment
   for (Resource resource : resources) {
     resource.Draw();
@@ -180,6 +207,17 @@ void keyPressed() {
   }
   
   // Acquisition Debug keyCodes
+  if (keyCode  == 'A') {
+    for (Recon recon : recon) {
+      recon.FindPatrolDestination();
+      recon.FindPatrolPath();
+    }
+  }
+  if (keyCode  == 'S') {
+    for (Recon recon : recon) {
+      recon.MoveToDestination(0.01);
+    }
+  }
   
 }
 

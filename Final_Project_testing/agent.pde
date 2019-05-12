@@ -44,11 +44,18 @@ class Agent {
   }
 
   boolean validAgentCSpace(float x, float y) {
+    // Collision with Obstacle
     for (Obstacle obstacle : obstacles) {
       if (obstacle.obstacleCollision(x, y, this.size)) {
         return false;
       }
     }
+    // Collision with Wall
+    if (x < (this.size)) return false;  // Left Wall
+    if (x > (fieldWidth - this.size)) return false;  // Right Wall
+    if (y < (this.size)) return false;  // Top Wall
+    if (y > (fieldHeight - this.size)) return false;  // Bottom Wall
+    // If no collisions, return true (valid state)
     return true;
   }
 
@@ -157,7 +164,7 @@ class Agent {
         acc.x = 0;
         acc.y = 0;
       }
-      else if ((vel.x > (maxVelocity/5))||(vel.y > (maxVelocity/5))){
+      else if ((vel.x > 15)||(vel.y > 15)){
         acc.x = -vel.x/2;
         acc.y = -vel.y/2;
       }
@@ -542,10 +549,13 @@ class Acquisition extends Agent {
  ===================================
  */
 
-class Recon extends Agent {
+class Recon extends Agent {  
+  
+  PVector targetDestination = new PVector();
+  
   Recon() {
     this.size = 20;
-    maxVelocity = 100;
+    maxVelocity = 200;
     this.pos = new PVector(r.nextFloat()*fieldWidth, r.nextFloat()*fieldHeight, 0);
     visionLength = 50;
     visionX1 = pos.x + sin(dir-PI/8)*visionLength;
@@ -594,7 +604,7 @@ class Recon extends Agent {
     }
     // If no viable position near herd, spawn location is random
     if (!noCollision) this.pos = new PVector(r.nextFloat()*fieldWidth, r.nextFloat()*fieldHeight, 0);
-    visionLength = 50;
+    visionLength = 100;
     visionX1 = pos.x + sin(dir-PI/8)*visionLength;
     visionY1 = pos.y + cos(dir-PI/8)*visionLength;
     visionX2 = pos.x + sin(dir+PI/8)*visionLength;
@@ -617,39 +627,115 @@ class Recon extends Agent {
   // Find a "good" patrol destination
   // Call once before FindPatrolPath();
   // Prioritizes location near gatherers but further from other recon agents
-  
   void FindPatrolDestination(){
     float potentialX, potentialY;
     boolean locationFound;
-    float maxAcquisitionDistance = 200;
-    float minReconDistance = 100;
+    float maxAcquisitionDistance = 300;
+    float minReconDistance = 200;
     while(true){
       locationFound = true;
       potentialX = r.nextFloat()*fieldWidth;
       potentialY = r.nextFloat()*fieldHeight;
-      // Check if within max distance from acquisition
-      if (locationFound) {
-        for (Acquisition acquisition : acquisition) {
-          if (dist(pos.x, pos.y, acquisition.pos.x, acquisition.pos.y) < maxAcquisitionDistance){
-            locationFound = false;
-            maxAcquisitionDistance += 20;
-            break;
-          }
-        }          
-      }
+      // Check if in valid space 
+      if (!validAgentCSpace(potentialX,potentialY)) locationFound = false;
       // Check if at least min distance from other recon
       if (locationFound) {
         for (Recon recon : recon) {
           if (recon!=this){
-            if (dist(pos.x, pos.y, recon.pos.x, recon.pos.y) > minReconDistance){
+            if (dist(potentialX, potentialY, recon.pos.x, recon.pos.y) < minReconDistance){
               locationFound = false;
-              minReconDistance += 20;
+              minReconDistance -= 5;
               break;
             }
           }
         }          
       }
+      // Check if within max distance from acquisition
+      if (locationFound) {
+        boolean withinRangeTemp = false;
+        for (Acquisition acquisition : acquisition) {
+          if (dist(potentialX, potentialY, acquisition.pos.x, acquisition.pos.y) < maxAcquisitionDistance){
+            withinRangeTemp = true;
+            break;
+          }
+        }
+        if (!withinRangeTemp) locationFound = false;
+      }
+      if (locationFound) {
+        targetDestination = new PVector(potentialX,potentialY,0);
+        break;
+      }
     }
+  }
+  
+  
+  // Find path to targetDestination
+  // Call once after FindPatrolDestination() (which sets the targetDestination)
+  void FindPatrolPath(){
+    for (int i=0; i<10; i++) {
+      initializeNodes(targetDestination.x, targetDestination.y);
+      calcNodeCostMatrix();
+      if (search(this)) {
+        answerFound = true;
+        break;
+      }
+    }
+    nextNode = 0;
+  }
+  
+  
+  // Move to targetDestination along path stored in this.answer
+  // Call this function each frame while moving towards targetDestination
+  // Always call FindPatrolDestination() and FindPatrolPath() before initially calling this function
+  // Note: Once agent arrives at targetDestination, call FindPatrolDestination() for a new destination
+  void MoveToDestination(float dt) {
+    calculateNextNode();
+    calculatePatrolForces();
+    calculateVelocities(dt, true);
+    calculatePositions(dt);
+    calculateCollisions();
+    calculateRotations(dt);
+  }
+  void calculatePatrolForces(){
+    calculateForces();
+    collisionForce(10);
+  }
+  void collisionForce(float collisionDistance) {  // Collision Avoidance Forces
+    float totalVelocity = sqrt(vel.x*vel.x + vel.y*vel.y);
+    if (totalVelocity == 0) totalVelocity = 0.01;
+    float aheadX = pos.x + (vel.x/totalVelocity*collisionDistance);
+    float aheadY = pos.y + (vel.y/totalVelocity*collisionDistance);
+    Obstacle obstacle = aheadCollision(pos.x, pos.y, aheadX, aheadY, collisionDistance);
+    if (obstacle != null) {
+      float tempX = aheadX - obstacle.position.x;
+      float tempY = aheadY - obstacle.position.y;
+      float tempTotal = sqrt(tempX*tempX + tempY*tempY);
+      acc.x += tempX/tempTotal*maxVelocity*5;
+      acc.y += tempY/tempTotal*maxVelocity*5;
+    }
+  }
+  Obstacle aheadCollision(float agentX, float agentY, float aheadX, float aheadY, float collisionDistance) {
+    int intervalCount = (int)(collisionDistance*10);
+    float intervalDirX = (aheadX - agentX)/intervalCount;
+    float intervalDirY = (aheadY - agentY)/intervalCount;
+    float intervalPosX = agentX;
+    float intervalPosY = agentY;
+    for (int k=0; k<intervalCount; k++) {
+      // Check if a collision occurs between agent position and ahead position
+      // If a collision occurs, obstacle = obstacle number, else obstacle = -1
+      float dx, dy, CRadius;
+      for (Obstacle obstacle : obstacles) {
+        dx = (intervalPosX-obstacle.position.x);
+        dy = (intervalPosY-obstacle.position.y);
+        CRadius = (obstacle.size/2 + size);
+        if ( (dx*dx + dy*dy) < (CRadius*CRadius) ) {
+          return obstacle;
+        }
+      }
+      intervalPosX += intervalDirX;
+      intervalPosY += intervalDirY;
+    }
+    return null;
   }
   
   

@@ -20,11 +20,11 @@ class Obstacle{
   }
   
   // Returns true if collision with obstacle
-  boolean obstacleCollision(float x, float y, float size){
+  boolean obstacleCollision(float x, float y, float objectSize){
     float dist_x = x - this.position.x;
     float dist_y = y - this.position.y;
     float dist = sqrt( (dist_x*dist_x) + (dist_y*dist_y) );
-    if (dist < (size/2+this.size/2)){
+    if (dist < (objectSize/2+this.size/2)){
       return true;
     }
     else return false;
