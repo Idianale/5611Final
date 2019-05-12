@@ -108,11 +108,11 @@ void drawSim() {
   for (Resource resource : resources) {
     resource.Draw();
   }
-  for (Recon recon : recon) {
-    recon.display();
-  }
   for (Acquisition acquisition : acquisition) {
     acquisition.display();
+  }
+  for (Recon recon : recon) {
+    recon.display();
   }
   for (Predator predator : predator) {
     predator.display();
@@ -123,6 +123,9 @@ void drawSim() {
   // Display 
   for (Acquisition acquisition : acquisition) {
     acquisition.displayCone();
+  }
+  for (Recon recon : recon) {
+    recon.display();
   }
 }
 

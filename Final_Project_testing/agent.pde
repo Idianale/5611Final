@@ -272,19 +272,31 @@ class Agent {
     // Check for collision with walls
     if (pos.x < (size/2)) {  // Left Wall
       pos.x = size/2 + 1;
+      if (acc.x < 0) acc.x = 0;
       if (vel.x < 0) vel.x = 1;
+      //if ((dir > PI/2)&&(dir <= PI)) dir = PI/2;
+      //if ((dir > -PI)&&(dir < -PI/2)) dir = -PI/2;
     }
     if (pos.x > (fieldWidth - size/2)) {  // Right Wall
       pos.x = fieldWidth - size/2 - 1;
+      if (acc.x > 0) acc.x = 0;
       if (vel.x > 0) vel.x = -1;
+      //if ((dir > -PI/2)&&(dir < 0)) dir = -PI/2;
+      //if ((dir >= 0)&&(dir < PI/2)) dir = PI/2;
     }
     if (pos.y < (size/2)) {  // Top Wall
       pos.y = size/2 + 1;
-      if (vel.y < 0) vel.y = 1;
+      if (acc.y < 0) acc.y = 0;
+      if (vel.y < 0) vel.y = 5;
+      //if ((dir > 0)&&(dir <= PI/2)) dir = 0;
+      //if ((dir > PI/2)&&(dir <= PI)) dir = PI;
     }
     if (pos.y > (fieldHeight - size/2)) {  // Bottom Wall
       pos.y = fieldHeight - size/2 - 1;
+      if (acc.y > 0) acc.y = 0;
       if (vel.y > 0) vel.y = -1;
+      //if ((dir > -PI)&&(dir <= -PI/2)) dir = PI;
+      //if ((dir > PI/2)&&(dir <= PI)) dir = 0;
     }
   }
 
@@ -457,7 +469,6 @@ class Acquisition extends Agent {
     if(awayFromPredatorX < 0) awayFromPredatorX = awayFromPredatorX/-awayFromPredatorX*maxVelocity;
     if(awayFromPredatorY > 0) awayFromPredatorY = awayFromPredatorY/awayFromPredatorY*maxVelocity;
     if(awayFromPredatorY < 0) awayFromPredatorY = awayFromPredatorY/-awayFromPredatorY*maxVelocity;
-    
     if (!withinArc(acc.x,acc.y,awayFromPredatorX,awayFromPredatorY,PI)){
       acc.x = 0;
       acc.y = 0;
@@ -466,10 +477,62 @@ class Acquisition extends Agent {
       acc.x += awayFromPredatorX;
       acc.y += awayFromPredatorY;
     }
+    // Collision Avoidance Forces
+    collisionForce(50);
+    // If agent will soon collide with wall, force away from wall
+    if (pos.x < (5 + size/2)) {  // Left Wall
+      if (vel.x < 0) acc.x += maxVelocity*10;
+    }
+    if (pos.x > (fieldWidth -5 - size/2)) {  // Right Wall
+      if (vel.x > 0) acc.x -= maxVelocity*10;
+    }
+    if (pos.y < (5 + size/2)) {  // Top Wall
+      if (vel.y < 0) acc.y += maxVelocity*10;
+    }
+    if (pos.y > (fieldHeight - 5 - size/2)) {  // Bottom Wall
+      if (vel.y > 0) acc.y -= maxVelocity*10;
+    }
+  }
+  void collisionForce(float collisionDistance) {  // Collision Avoidance Forces
+    float totalVelocity = sqrt(vel.x*vel.x + vel.y*vel.y);
+    float aheadX = pos.x + (vel.x/totalVelocity*collisionDistance);
+    float aheadY = pos.y + (vel.y/totalVelocity*collisionDistance);
+    Obstacle obstacle = aheadCollision(pos.x, pos.y, aheadX, aheadY, collisionDistance);
+    if (obstacle != null) {
+      float tempX = aheadX - obstacle.position.x;
+      float tempY = aheadY - obstacle.position.y;
+      float tempTotal = sqrt(tempX*tempX + tempY*tempY);
+      acc.x += tempX/tempTotal*maxVelocity*10;
+      acc.y += tempY/tempTotal*maxVelocity*10;
+    }
+  }
+  Obstacle aheadCollision(float agentX, float agentY, float aheadX, float aheadY, float collisionDistance) {
+    int intervalCount = (int)(collisionDistance*10);
+    float intervalDirX = (aheadX - agentX)/intervalCount;
+    float intervalDirY = (aheadY - agentY)/intervalCount;
+    float intervalPosX = agentX;
+    float intervalPosY = agentY;
+    for (int k=0; k<intervalCount; k++) {
+      // Check if a collision occurs between agent position and ahead position
+      // If a collision occurs, obstacle = obstacle number, else obstacle = -1
+      float dx, dy, CRadius;
+      for (Obstacle obstacle : obstacles) {
+        dx = (intervalPosX-obstacle.position.x);
+        dy = (intervalPosY-obstacle.position.y);
+        CRadius = (obstacle.size/2 + size);
+        if ( (dx*dx + dy*dy) < (CRadius*CRadius) ) {
+          return obstacle;
+        }
+      }
+      intervalPosX += intervalDirX;
+      intervalPosY += intervalDirY;
+    }
+    return null;
   }
   
   
 }
+
 
 
 
@@ -545,6 +608,17 @@ class Recon extends Agent {
     ellipse(this.pos.x, this.pos.y, this.size, this.size);
     noFill();
   }
+  void displayCone() {
+    // Draw Vision Cone
+    fill(50, 50, 150, 100);
+    triangle(this.pos.x, this.pos.y, visionX1, visionY1, visionX2, visionY2);
+    noFill();
+  }
+  
+  // Behaviors
+  
+  
+  
 }
 
 /*
