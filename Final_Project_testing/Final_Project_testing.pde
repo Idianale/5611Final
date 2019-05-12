@@ -197,7 +197,7 @@ void keyPressed() {
       }
     }
   }
-  if (keyCode  == 'U') {
+  if (keyCode  == 'Y') {
     predLastSeen.x = mouseX;
     predLastSeen.y = mouseY;
     predLastSeen.z = 0;
