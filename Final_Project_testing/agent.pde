@@ -145,15 +145,30 @@ class Agent {
   // Calculates accelaration/forces
   float goalDistance = resourceSize/2 + size/2;
   void calculateForces() {
-    // Force Towards Goal
+    // Calculate Force Towards Goal
     float tempGoalX = nodePos[answer.get(nextNode)][0];
     float tempGoalY = nodePos[answer.get(nextNode)][1];
+    float tempX = dirX(pos.x, tempGoalX);
+    float tempY = dirY(pos.y, tempGoalY);
+    float tempTotal = sqrt(tempX*tempX + tempY*tempY);
+    
+    if (!withinArc(acc.x,acc.y,tempX,tempY,PI/8)){
+      if (withinArc(acc.x,acc.y,tempX,tempY,PI)){
+        acc.x = 0;
+        acc.y = 0;
+      }
+      else if ((vel.x > (maxVelocity/5))||(vel.y > (maxVelocity/5))){
+        acc.x = -vel.x/2;
+        acc.y = -vel.y/2;
+      }
+      else{
+        acc.x = 0;
+        acc.y = 0;
+      }
+    }
     // If next node is the goal
     if (nextNode==(answer.size()-1)) {
-      if (dist(tempGoalX, tempGoalY, pos.x, pos.y) > (goalDistance*2)) {
-        float tempX = dirX(pos.x, tempGoalX);
-        float tempY = dirY(pos.y, tempGoalY);
-        float tempTotal = sqrt(tempX*tempX + tempY*tempY);
+      if (dist(tempGoalX, tempGoalY, pos.x, pos.y) > (goalDistance)) {
         if (tempTotal<(5/3)) {
           acc.x += tempX*3;
           acc.y += tempY*3;
@@ -161,20 +176,41 @@ class Agent {
           acc.x += tempX/tempTotal*5;
           acc.y += tempY/tempTotal*5;
         }
-      } else {
-        float tempX = dirX(pos.x, tempGoalX);
-        float tempY = dirY(pos.y, tempGoalY);
-        float tempTotal = sqrt(tempX*tempX + tempY*tempY);
-        acc.x = tempX/tempTotal;
-        acc.y = tempY/tempTotal;
       }
+    } else {
+      acc.x += tempX/tempTotal*5;
+      acc.y += tempY/tempTotal*5;
     }
+    // limit max accelaration
+    //float totalAcc = sqrt(acc.x*acc.x + acc.y*acc.y);
+    //if (totalAcc > maxVelocity){
+    //  acc.x = acc.x*maxVelocity/totalAcc;
+    //  acc.y = acc.y*maxVelocity/totalAcc;
+    //}
   }
   float dirX(float x1, float x2) {
     return (x2-x1);
   }
   float dirY(float y1, float y2) {
     return (y2-y1);
+  }
+  boolean sameSign(float a, float b){
+    if (a>=0) {
+      if (b>=0){ return true;
+      } else return false;
+    }
+    else{
+      if (b<=0){ return true;
+      } else return false;
+    }
+  }
+  boolean withinArc(float x1, float y1, float x2, float y2, float arc){
+    if ((atan2(x1,y1) - atan2(x2,y2)) < arc){
+      if ((atan2(x1,y1) - atan2(x2,y2)) > -arc){
+        return true;
+      }
+    }
+    return false;
   }
 
 
@@ -280,8 +316,11 @@ class WorldState {
  */
 
 class Acquisition extends Agent {
+  Resource targetResource;
+
   Acquisition() {
     size = 30;
+    maxVelocity = 100;
     this.pos = new PVector(r.nextFloat()*fieldWidth, r.nextFloat()*fieldHeight, 0);
     visionLength = 50;
     visionX1 = pos.x + sin(dir-PI/8)*visionLength;
@@ -291,6 +330,7 @@ class Acquisition extends Agent {
   }
   Acquisition(float x, float y, int agentSpawned) {
     size = 30;
+    maxVelocity = 100;
     float spawn_at_x, spawn_at_y;
     // Check for collision with previously spawned agents and obstacles
     boolean noCollision = true;
@@ -334,18 +374,19 @@ class Acquisition extends Agent {
     ellipse(this.pos.x, this.pos.y, this.size, this.size);
     noFill();
   }
-  void displayCone(){
+  void displayCone() {
     // Draw Vision Cone
-    fill(50,150,50,100);
+    fill(50, 150, 50, 100);
     triangle(this.pos.x, this.pos.y, visionX1, visionY1, visionX2, visionY2);
     noFill();
   }
 
   // Behaviors
 
-  // Find and return the closest nondepleted resource
-  // Pass the ouput to FindPathToResource(resource)
-  Resource LocateResource() {
+  // Find the closest nondepleted resource
+  // Save the resource under variable targetResource
+  // Find path to this resource using FindPathToResource
+  void LocateResource() {
     float shortestDistance = Float.POSITIVE_INFINITY;
     Resource closestResource = null;
     float dist_x, dist_y, dist;
@@ -360,27 +401,27 @@ class Acquisition extends Agent {
         }
       }
     }
-    return closestResource;
+    targetResource = closestResource;
   }
 
-  // Find path to resource
-  // Pass resource from LocateResource() to this function
-  void FindPathToResource(Resource resource) {
-    for (int i=0; i<5; i++) {
-      initializeNodes(resource.position.x, resource.position.y);
+  // Find path to targetResource
+  // Use LocateResource() set targetResource
+  void FindPathToResource() {
+    for (int i=0; i<10; i++) {
+      initializeNodes(targetResource.position.x, targetResource.position.y);
       calcNodeCostMatrix();
       if (search(this)) {
         answerFound = true;
         break;
       }
     }
+    nextNode[i] = 0;
   }
 
   // Move to resource along path stored in this.answer
   // Call this function each frame while moving towards resource
   // Always call LocateResource() and FindPathToResource() before initially calling this function
   void MoveToResource(float dt) {
-
     calculateNextNode();
     calculateForces();
     calculateVelocities(dt, true);
@@ -388,7 +429,23 @@ class Acquisition extends Agent {
     calculateCollisions();
     calculateRotations(dt);
   }
+
+  // Gradually deplete resource
+  // Call this function each frame while sitting at a resource
+  void DepleteResource(float dt) {
+    if (targetResource.quantity > 0) {
+      targetResource.quantity = targetResource.quantity - 100*dt;
+      // Note: Increase scoreboard count by dt
+    } else {
+      // Note: LocateResource
+    }
+  }
 }
+
+
+
+
+
 
 /*
 ===================================
@@ -399,6 +456,7 @@ class Acquisition extends Agent {
 class Recon extends Agent {
   Recon() {
     this.size = 20;
+    maxVelocity = 100;
     this.pos = new PVector(r.nextFloat()*fieldWidth, r.nextFloat()*fieldHeight, 0);
     visionLength = 50;
     visionX1 = pos.x + sin(dir-PI/8)*visionLength;
@@ -469,10 +527,12 @@ class Recon extends Agent {
 class Predator extends Agent {
   Predator() {
     this.size = 20;
+    maxVelocity = 100;
     this.pos = new PVector(r.nextFloat()*fieldWidth, r.nextFloat()*fieldHeight, 0);
   }
   Predator(float herdX, float herdY, int agentSpawned, float minDistFromHerd) {
     this.size = 20;
+    maxVelocity = 100;
 
     float spawn_at_x, spawn_at_y, dist_x, dist_y;
     // Check for collision with previously spawned agents and obstacles

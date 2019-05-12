@@ -141,13 +141,27 @@ void keyPressed() {
   // Acquisition Debug keyCodes
   if (keyCode  == 'Q') {
     for (Acquisition acquisition : acquisition) {
-      Resource resource = acquisition.LocateResource();
-      if (resource != null) acquisition.FindPathToResource(resource);
+      acquisition.LocateResource();
+      if (acquisition.targetResource != null) acquisition.FindPathToResource();
     }
   }
   if (keyCode  == 'W') {
     for (Acquisition acquisition : acquisition) {
       acquisition.MoveToResource(0.01);
+    }
+  }
+  if (keyCode  == 'E') {
+    for (Acquisition acquisition : acquisition) {
+      if (acquisition.targetResource != null){
+        if (acquisition.targetResource.quantity > 0) acquisition.DepleteResource(0.01);
+      }
+    }
+  }
+  if (keyCode  == 'T') {
+    for (Acquisition acquisition : acquisition) {
+      if (acquisition.targetResource != null){
+        if (acquisition.targetResource.quantity > 0) acquisition.DepleteResource(1);
+      }
     }
   }
 }

@@ -22,14 +22,18 @@ boolean search(Agent agent) {
   }
 
   // A* Search
-
+  float startTime, currentTime, timeLimit;  // Prevents A* search from taking too long
+  startTime = millis();
+  timeLimit = 5;
   while (true) {
     for (int j=0; j<NODECOUNT; j++) {
+      currentTime = millis(); if (currentTime-startTime > timeLimit) {print("}:");return false;} 
       if (agent.nodeCost[currentPath.get(currentPath.size()-1)][j] != Float.POSITIVE_INFINITY) {
         if (!currentPath.hasValue(j)) {
           // Add to queue
           boolean addFlag = false;
           for (int k=0; k<queueCost.size(); k++) {
+            currentTime = millis(); if (currentTime-startTime > timeLimit) {print("}:");return false;}         
             float costOfTakingPathJ = agent.nodeCost[currentPath.get(currentPath.size()-1)][j] + currentCost;
             float costOfQueuePathK = queueCost.get(k);
             if ( costOfTakingPathJ < costOfQueuePathK ) {
