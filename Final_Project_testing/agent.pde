@@ -567,6 +567,25 @@ class Acquisition extends Agent {
     }
     return null;
   }
+  
+  
+  // Note: Not called by anything
+  // Boolean check for whether predator is in Acquisition vision cone
+  // Can be used if we only want this single agent to run away instead of setting DANGER
+  boolean predatorSpottedAcquisition(){
+    for (Predator predator : predator){
+      for (float i=0; i<(2*PI); i+=(PI/8)){
+        if (predator.trianglePointCollision(
+              pos.x,    pos.y,
+              visionX1, visionY1,
+              visionX2, visionY2,
+              predator.pos.x+(cos(predator.dir)*predator.size/2),
+              predator.pos.y+(sin(predator.dir)*predator.size/2))) return true;
+      }
+    }
+    return false;
+  }
+
 }
 
 
