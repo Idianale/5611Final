@@ -232,7 +232,35 @@ void keyPressed() {
     }
   }
   
+  // Predator Debug keyCodes
+  if (keyCode  == 'Z') {
+    for (Predator predator : predator) {
+      predator.ChooseTargetAndPath();
+    }
+  }
+  if (keyCode  == 'X') {
+    for (Predator predator : predator) {
+      predator.FollowPathToTarget(0.01);
+    }
+  }
+  if (keyCode  == 'C') {
+    for (Predator predator : predator) {
+      if (time == 60){
+        predator.ChooseTargetAndPath();
+        time = 0;
+      }
+      time++;
+      predator.FollowPathToTarget(0.01);
+    }
+  }
+  if (keyCode  == 'V') {
+    for (Predator predator : predator) {
+      predator.FleeFromRecon(0.01);
+    }
+  }
+  
 }
+float time = 60;
 
 // Reset Simulation
 void reset(){

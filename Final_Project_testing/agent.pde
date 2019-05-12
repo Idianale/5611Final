@@ -1,4 +1,4 @@
-class Agent {
+class Agent { //<>//
   PVector pos; 
   PVector vel; 
   PVector acc; 
@@ -127,10 +127,12 @@ class Agent {
       }     
 
       // If agent is within nodeRadius of node, go to next node
-      dx = (pos.x-nodePos[answer.get(nextNode)][0]);
-      dy = (pos.y-nodePos[answer.get(nextNode)][1]);
-      if ( (dx*dx + dy*dy) < (nodeRadius*nodeRadius) ) {
-        nextNode++;
+      if (nextNode!=(answer.size()-1)) {
+        dx = (pos.x-nodePos[answer.get(nextNode)][0]);
+        dy = (pos.y-nodePos[answer.get(nextNode)][1]);
+        if ( (dx*dx + dy*dy) < (nodeRadius*nodeRadius) ) {
+          nextNode++;
+        }
       }
     }
   }
@@ -158,19 +160,20 @@ class Agent {
     float tempX = dirX(pos.x, tempGoalX);
     float tempY = dirY(pos.y, tempGoalY);
     float tempTotal = sqrt(tempX*tempX + tempY*tempY);
-    
-    if (!withinArc(acc.x,acc.y,tempX,tempY,PI/8)){
-      if (withinArc(acc.x,acc.y,tempX,tempY,PI)){
+
+    if (!withinArc(acc.x, acc.y, tempX, tempY, PI/8)) {
+      if (withinArc(acc.x, acc.y, tempX, tempY, PI)) {
         acc.x = 0;
         acc.y = 0;
-      }
-      else if ((vel.x > 15)||(vel.y > 15)){
-        acc.x = -vel.x/2;
-        acc.y = -vel.y/2;
-      }
-      else{
+      } else if ((vel.x > 15)||(vel.y > 15)) {
+        acc.x = -vel.x;
+        acc.y = -vel.y;
+      } else {
         acc.x = 0;
         acc.y = 0;
+        vel.x = vel.x * 0.1;
+        vel.y = vel.y * 0.1;
+        ;
       }
     }
     // If next node is the goal
@@ -201,21 +204,20 @@ class Agent {
   float dirY(float y1, float y2) {
     return (y2-y1);
   }
-  boolean sameSign(float a, float b){
+  boolean sameSign(float a, float b) {
     if (a>=0) {
-      if (b>=0){ return true;
+      if (b>=0) { 
+        return true;
       } else return false;
-    }
-    else{
-      if (b<=0){ return true;
+    } else {
+      if (b<=0) { 
+        return true;
       } else return false;
     }
   }
-  boolean withinArc(float x1, float y1, float x2, float y2, float arc){
-    if ((atan2(x1,y1) - atan2(x2,y2)) < arc){
-      if ((atan2(x1,y1) - atan2(x2,y2)) > -arc){
-        return true;
-      }
+  boolean withinArc(float x1, float y1, float x2, float y2, float arc) {
+    if (abs(atan2(y1, x1) - atan2(y2, x2)) < arc) {
+      return true;
     }
     return false;
   }
@@ -320,6 +322,17 @@ class Agent {
     //agentRotTheta[i]=theta; // TEST
     //agentRotSpeed[i]+=phi*dt/agentRadius/2;
     //if (agentRotSpeed[i] > radians(360)) agentRotSpeed[i] = agentRotSpeed[i] - radians(360);
+  }
+
+  boolean trianglePointCollision(float tx1, float ty1, float tx2, float ty2, 
+    float tx3, float ty3, float px, float py) {
+    float trianglePoint1 = abs((tx1-px)*(ty2-py) - (tx2-px)*(ty1-py));
+    float trianglePoint2 = abs((tx2-px)*(ty3-py) - (tx3-px)*(ty2-py));
+    float trianglePoint3 = abs((tx3-px)*(ty1-py) - (tx1-px)*(ty3-py));
+    float triangleArea = abs((tx2-tx1)*(ty3-ty1) - (tx3-tx1)*(ty2-ty1)); // Heron's Formula
+    if ((trianglePoint1 + trianglePoint2 + trianglePoint3) == triangleArea) {
+      return true;
+    } else return false;
   }
 }
 
@@ -429,7 +442,7 @@ class Acquisition extends Agent {
     for (int i=0; i<10; i++) {
       initializeNodes(targetResource.position.x, targetResource.position.y);
       calcNodeCostMatrix();
-      if (search(this)) {
+      if (search(this,3)) {
         answerFound = true;
         break;
       }
@@ -448,12 +461,12 @@ class Acquisition extends Agent {
     calculateCollisions();
     calculateRotations(dt);
   }
-  void calculateAcquisitionForces(){
+  void calculateAcquisitionForces() {
     calculateForces();
     // Force away from nearby acquisiton agents
     for (Acquisition acquisition : acquisition) {
-      if (acquisition!=this){
-        if (dist(pos.x, pos.y, acquisition.pos.x, acquisition.pos.y)<size){
+      if (acquisition!=this) {
+        if (dist(pos.x, pos.y, acquisition.pos.x, acquisition.pos.y)<size) {
           float dir_x = pos.x - acquisition.pos.x;
           if (dir_x > 0) dir_x = dir_x/dir_x;
           if (dir_x < 0) dir_x = dir_x/-dir_x;
@@ -477,28 +490,27 @@ class Acquisition extends Agent {
       // Note: LocateResource
     }
   }
-  
+
   // Moves away from predator's last seen location
   // Call this function each frame while fleeing from predator
-  void FleeFromPredator(float dt){
+  void FleeFromPredator(float dt) {
     calculateFleeForces();
     calculateVelocities(dt, true);
     calculatePositions(dt);
     calculateCollisions();
     calculateRotations(dt);
   }
-  void calculateFleeForces(){
+  void calculateFleeForces() {
     float awayFromPredatorX = pos.x - predLastSeen.x;
     float awayFromPredatorY = pos.y - predLastSeen.y;
-    if(awayFromPredatorX > 0) awayFromPredatorX = awayFromPredatorX/awayFromPredatorX*maxVelocity;
-    if(awayFromPredatorX < 0) awayFromPredatorX = awayFromPredatorX/-awayFromPredatorX*maxVelocity;
-    if(awayFromPredatorY > 0) awayFromPredatorY = awayFromPredatorY/awayFromPredatorY*maxVelocity;
-    if(awayFromPredatorY < 0) awayFromPredatorY = awayFromPredatorY/-awayFromPredatorY*maxVelocity;
-    if (!withinArc(acc.x,acc.y,awayFromPredatorX,awayFromPredatorY,PI)){
+    if (awayFromPredatorX > 0) awayFromPredatorX = awayFromPredatorX/awayFromPredatorX*maxVelocity;
+    if (awayFromPredatorX < 0) awayFromPredatorX = awayFromPredatorX/-awayFromPredatorX*maxVelocity;
+    if (awayFromPredatorY > 0) awayFromPredatorY = awayFromPredatorY/awayFromPredatorY*maxVelocity;
+    if (awayFromPredatorY < 0) awayFromPredatorY = awayFromPredatorY/-awayFromPredatorY*maxVelocity;
+    if (!withinArc(acc.x, acc.y, awayFromPredatorX, awayFromPredatorY, PI)) {
       acc.x = 0;
       acc.y = 0;
-    }
-    else {
+    } else {
       acc.x += awayFromPredatorX;
       acc.y += awayFromPredatorY;
     }
@@ -568,9 +580,9 @@ class Acquisition extends Agent {
  */
 
 class Recon extends Agent {  
-  
+
   PVector targetDestination = new PVector();
-  
+
   Recon() {
     this.size = 20;
     maxVelocity = 200;
@@ -639,40 +651,40 @@ class Recon extends Agent {
     triangle(this.pos.x, this.pos.y, visionX1, visionY1, visionX2, visionY2);
     noFill();
   }
-  
+
   // Behaviors
-  
+
   // Find a "good" patrol destination
   // Call once before FindPatrolPath();
   // Prioritizes location near gatherers but further from other recon agents
-  void FindPatrolDestination(){
+  void FindPatrolDestination() {
     float potentialX, potentialY;
     boolean locationFound;
     float maxAcquisitionDistance = 300;
     float minReconDistance = 200;
-    while(true){
+    while (true) {
       locationFound = true;
       potentialX = r.nextFloat()*fieldWidth;
       potentialY = r.nextFloat()*fieldHeight;
       // Check if in valid space 
-      if (!validAgentCSpace(potentialX,potentialY)) locationFound = false;
+      if (!validAgentCSpace(potentialX, potentialY)) locationFound = false;
       // Check if at least min distance from other recon
       if (locationFound) {
         for (Recon recon : recon) {
-          if (recon!=this){
-            if (dist(potentialX, potentialY, recon.pos.x, recon.pos.y) < minReconDistance){
+          if (recon!=this) {
+            if (dist(potentialX, potentialY, recon.pos.x, recon.pos.y) < minReconDistance) {
               locationFound = false;
               minReconDistance -= 5;
               break;
             }
           }
-        }          
+        }
       }
       // Check if within max distance from acquisition
       if (locationFound) {
         boolean withinRangeTemp = false;
         for (Acquisition acquisition : acquisition) {
-          if (dist(potentialX, potentialY, acquisition.pos.x, acquisition.pos.y) < maxAcquisitionDistance){
+          if (dist(potentialX, potentialY, acquisition.pos.x, acquisition.pos.y) < maxAcquisitionDistance) {
             withinRangeTemp = true;
             break;
           }
@@ -680,28 +692,28 @@ class Recon extends Agent {
         if (!withinRangeTemp) locationFound = false;
       }
       if (locationFound) {
-        targetDestination = new PVector(potentialX,potentialY,0);
+        targetDestination = new PVector(potentialX, potentialY, 0);
         break;
       }
     }
   }
-  
-  
+
+
   // Find path to targetDestination
   // Call once after FindPatrolDestination() (which sets the targetDestination)
-  void FindPatrolPath(){
+  void FindPatrolPath() {
     for (int i=0; i<10; i++) {
       initializeNodes(targetDestination.x, targetDestination.y);
       calcNodeCostMatrix();
-      if (search(this)) {
+      if (search(this,3)) {
         answerFound = true;
         break;
       }
     }
     nextNode = 0;
   }
-  
-  
+
+
   // Move to targetDestination along path stored in this.answer
   // Call this function each frame while moving towards targetDestination
   // Always call FindPatrolDestination() and FindPatrolPath() before initially calling this function
@@ -714,7 +726,7 @@ class Recon extends Agent {
     calculateCollisions();
     calculateRotations(dt);
   }
-  void calculatePatrolForces(){
+  void calculatePatrolForces() {
     calculateForces();
     collisionForce(10);
   }
@@ -755,15 +767,15 @@ class Recon extends Agent {
     }
     return null;
   }
-  
-  
+
+
   // Create path to last known predator location
   // Call once when predator is located, then chase predator with MoveToDestination()
-  void FindPathToPredator(){
+  void FindPathToPredator() {
     for (int i=0; i<10; i++) {
       initializeNodes(predLastSeen.x, predLastSeen.y);
       calcNodeCostMatrix();
-      if (search(this)) {
+      if (search(this,3)) {
         answerFound = true;
         break;
       }
@@ -771,32 +783,32 @@ class Recon extends Agent {
     nextNode = 0;
   }
 
-  
+
   // Search for Predator when in WARNING status but predator location is unknown
   // Call once per search attempt
   // Call MoveToDestination() after running this function
   // Note: Default Radius 300? Maybe only attempt so acquisition agents aren't left alone
-  void SearchForPredator(float searchRadius){
+  void SearchForPredator(float searchRadius) {
     boolean locationSelected;
     float potentialX, potentialY;
-    while(true){
+    while (true) {
       locationSelected = true;
       potentialX = r.nextFloat()*fieldWidth;
       potentialY = r.nextFloat()*fieldHeight;
       // Check if in valid space 
-      if (!validAgentCSpace(potentialX,potentialY)) locationSelected = false;
+      if (!validAgentCSpace(potentialX, potentialY)) locationSelected = false;
       // Check if within radius of predLastSeen
-      if (locationSelected){
-        if (dist(potentialX, potentialY, predLastSeen.x, predLastSeen.y) > searchRadius){
+      if (locationSelected) {
+        if (dist(potentialX, potentialY, predLastSeen.x, predLastSeen.y) > searchRadius) {
           locationSelected = false;
         }
       }
-      if (locationSelected){
+      if (locationSelected) {
         // If location is selected, create path to location
         for (int i=0; i<10; i++) {
           initializeNodes(potentialX, potentialY);
           calcNodeCostMatrix();
-          if (search(this)) {
+          if (search(this,3)) {
             answerFound = true;
             break;
           }
@@ -806,7 +818,6 @@ class Recon extends Agent {
       }
     }
   }
-  
 }
 
 /*
@@ -865,11 +876,8 @@ class Predator extends Agent {
       }
       // Check for collision with obstacles
       if (noCollision) {
-        for (int i=0; i<obstacles.size(); i++) {
-          if (obstacles.get(i).obstacleCollision(spawn_at_x, spawn_at_y, this.size)) {
-            noCollision = false;
-            break;
-          }
+        if (!validAgentCSpace(spawn_at_x, spawn_at_y)) {
+          noCollision = false;
         }
       }
       if (noCollision) {
@@ -884,38 +892,316 @@ class Predator extends Agent {
     ellipse(this.pos.x, this.pos.y, this.size, this.size);
     noFill();
   }
-  
+
   // Behavior
-  /*
+
   // Chooses target acquision agent
-  // Call once every handful of frames (once per second?)
+  // Call once every handful of frames (once per second?) or if rechoosePath == true
   Acquisition target = null;
   Acquisition prevTarget = null;
-  void ChooseTarget(){    
+  boolean rechoosePath = true;
+  void ChooseTargetAndPath() {
+    // Shallow copy acquisition
+    ArrayList<Acquisition> sortedAcquisition =  (ArrayList<Acquisition>) acquisition.clone();
+    // First element = closest acquisition agent
+    Acquisition closestAcquisition = null;
+    float closestDist = Float.POSITIVE_INFINITY;
+    for (Acquisition acquisition : sortedAcquisition){
+      float dist = dist(pos.x,pos.y,acquisition.pos.x,acquisition.pos.y);
+      if (dist < closestDist)
+      {
+        closestAcquisition = acquisition;
+        closestDist = dist;
+      }
+    }
+    sortedAcquisition.add(0,closestAcquisition);
+    
+    rechoosePath = false;
+    // Starting from the closest acquisition agent
+    // For each acquisition, check if safe path to acquisition exists, break if safe path found
+    for (Acquisition acquisition : sortedAcquisition) {
+      for (int i=0; i<3; i++) {
+        initializePredatorNodes(acquisition.pos.x, acquisition.pos.y);
+        calcPredatorNodeCostMatrix();
+        if (search(this,2)) {
+          answerFound = true;
+          prevTarget = target;
+          target = acquisition;
+          break;
+        }
+        else {
+          answerFound = false;
+        }
+      }
+      nextNode = 0;
+      if (answerFound) break;
+    }
   }
-  
-  // Chooses path to target
-  // Call once when (target != prevTarget) or when (SafePath()) returns false
-  void ChoosePathToTarget(){
+  void initializePredatorNodes(float goalX, float goalY) {
+    nodePos[0][0] = this.pos.x;
+    nodePos[0][1] = this.pos.y;
+    // Goal Nodes
+    nodePos[NODECOUNT-1][0] = goalX;
+    nodePos[NODECOUNT-1][1] = goalY;
+    // Other Nodes
+    float x, y;
+    for (int i=1; i<(NODECOUNT-1); i++) {
+      x = random(this.size, fieldWidth-this.size);
+      y = random(this.size, fieldHeight-this.size);
+      if ( (validAgentCSpace(x, y) && (predatorSafeCSpace(x,y))) ) {
+        nodePos[i][0] = x;
+        nodePos[i][1] = y;
+      } else { 
+        i--;
+      }
+    }
   }
-  
+  boolean predatorSafeCSpace(float x, float y) {
+    for (Recon recon : recon) {
+      //Triangle Point Collision
+      /*
+      visionX1 = pos.x + sin(dir-PI/8)*visionLength;
+      visionY1 = pos.y + cos(dir-PI/8)*visionLength;
+      visionX2 = pos.x + sin(dir+PI/8)*visionLength;
+      visionY2 = pos.y + cos(dir+PI/8)*visionLength;
+      */
+      if (trianglePointCollision(recon.pos.x - sin(dir)*25,    recon.pos.y - cos(dir)*25,
+                                 recon.visionX1 + sin(dir-PI/8)*35, recon.visionY1 + cos(dir-PI/8)*35, 
+                                 recon.visionX2 + sin(dir+PI/8)*35, recon.visionY2 + cos(dir+PI/8)*35,
+                                 x, y)) {
+        return false;
+      }
+    }
+    return true;
+  }
+  void calcPredatorNodeCostMatrix() {
+    for (int i=0; i<NODECOUNT; i++) {
+      for (int j=0; j<NODECOUNT; j++) {
+        // Check for intersection
+        nodeCost[i][j] = predatorNodePathCollision(i, j, calcNodeCost(i, j));
+      }
+    }
+  }
+  float predatorNodePathCollision(int i, int j, float dist) {
+    int intervalCount = (int)(dist);
+    float intervalDirX = (nodePos[j][0]-nodePos[i][0])/intervalCount;
+    float intervalDirY = (nodePos[j][1]-nodePos[i][1])/intervalCount;
+    float intervalPosX = nodePos[i][0];
+    float intervalPosY = nodePos[i][1];
+    for (int k=0; k<intervalCount; k++) {
+      if (!validAgentCSpace(intervalPosX, intervalPosY)) return Float.POSITIVE_INFINITY;
+      if (!predatorSafeCSpace(intervalPosX, intervalPosY)) return Float.POSITIVE_INFINITY;
+      intervalPosX += intervalDirX;
+      intervalPosY += intervalDirY;
+    }
+    return dist;
+  }
+
+
   // Follow path to target
   // Call every frame when following path to target
-  void FollowPathToTarget(){
+  // Can also be called when no target is chosen, in which case doNothing() is called
+  // Note: doNothing() can be called directly instead of this function if (answerFound==false)
+  void FollowPathToTarget(float dt) {
+    if (answerFound) {
+      if (SafePath()) {
+        calculateNextPredatorNode();
+        calculatePredatorForces();
+        calculatePredatorVelocities(dt);
+        calculatePositions(dt);
+        calculateCollisions();
+        calculateRotations(dt);
+      } else rechoosePath = true;
+    } else {
+      doNothing();
+    }
+  }
+  void calculateNextPredatorNode() {
+    float dx, dy;
+    // If at goal, do nothing
+    if (nextNode<(answer.size()-1)) {
+      // Change nextNode to furthest visible node 
+      for (int j=(answer.size()-1); j>nextNode; j--) {
+        dx = (pos.x-nodePos[answer.get(j)][0]);
+        dy = (pos.y-nodePos[answer.get(j)][1]);
+        if (!agentPredatorNodePathCollision(j, sqrt(dx*dx + dy*dy))) {
+          nextNode = j;
+          break;
+        }
+      }
+      // If agent is within nodeRadius of node, go to next node
+      if (nextNode<(answer.size()-1)) {
+        dx = (pos.x-nodePos[answer.get(nextNode)][0]);
+        dy = (pos.y-nodePos[answer.get(nextNode)][1]);
+        if ( (dx*dx + dy*dy) < (nodeRadius*nodeRadius) ) {
+        }
+      }
+    }
+  }
+  boolean agentPredatorNodePathCollision(int node, float dist) {
+    int intervalCount = (int)(dist);
+    float intervalDirX = (nodePos[answer.get(node)][0]-pos.x)/intervalCount;
+    float intervalDirY = (nodePos[answer.get(node)][1]-pos.y)/intervalCount;
+    float intervalPosX = pos.x;
+    float intervalPosY = pos.y;
+    for (int k=0; k<intervalCount; k++) {
+      if (!validAgentCSpace(intervalPosX, intervalPosY)) return true;
+      if (!predatorSafeCSpace(intervalPosX, intervalPosY)) return true;
+      intervalPosX += intervalDirX;
+      intervalPosY += intervalDirY;
+    }
+    return false;
+  }
+  void calculatePredatorForces(){
+    // Calculate Force Towards Goal
+    float tempGoalX = nodePos[answer.get(nextNode)][0];
+    float tempGoalY = nodePos[answer.get(nextNode)][1];
+    float tempX = dirX(pos.x, tempGoalX);
+    float tempY = dirY(pos.y, tempGoalY);
+    float tempTotal = sqrt(tempX*tempX + tempY*tempY);
+    if (!withinArc(acc.x,acc.y,tempX,tempY,PI/8)){
+      if (withinArc(acc.x,acc.y,tempX,tempY,PI/4)){
+        acc.x = 0;
+        acc.y = 0;
+      }
+      //else if ((vel.x > 15)||(vel.y > 15)){
+        //acc.x = -1 * vel.x;
+        //acc.y = -1 * vel.y;
+      //}
+      else{
+        acc.x = 0;
+        acc.y = 0;
+      }
+    }
+    // If next node is the goal
+    if (nextNode==(answer.size()-1)) {
+      if (dist(tempGoalX, tempGoalY, pos.x, pos.y) > (goalDistanceThreshold)) {
+        if (tempTotal<(5/3)) {
+          acc.x += tempX*3;
+          acc.y += tempY*3;
+        } else {
+          acc.x += tempX/tempTotal*5;
+          acc.y += tempY/tempTotal*5;
+        }
+      }
+    } else {
+      acc.x += tempX/tempTotal*5;
+      acc.y += tempY/tempTotal*5;
+    }
+  }
+  void calculatePredatorVelocities(float dt) {
+    if (!withinArc(acc.x, acc.y, vel.x, vel.y, PI/8)) {
+      float ratioAccX, ratioAccY, totalAcc;
+      float agentVelocity = sqrt(vel.x*vel.x + vel.y*vel.y);
+      totalAcc = sqrt(acc.x*acc.x + acc.y*acc.y);
+      if (totalAcc > 0) {
+        ratioAccX = (acc.x/totalAcc);
+        ratioAccY = (acc.y/totalAcc);
+        vel.x = (agentVelocity*ratioAccX);
+        vel.y = (agentVelocity*ratioAccY);
+      }
+    }
+    vel.x += (acc.x*dt);
+    vel.y += (acc.y*dt);
+  
+    float agentVelocity = sqrt(vel.x*vel.x + vel.y*vel.y);
+    if (agentVelocity > maxVelocity) {
+      vel.x = vel.x/agentVelocity*maxVelocity;
+      vel.y = vel.y/agentVelocity*maxVelocity;
+    }
   }
   // Is the probability of getting caught by recon on the chosen path low enough?
-  boolean SafePath(){ 
+  boolean SafePath() {
+    return true;
+  }
+  // Do nothing, only slow down
+  void doNothing() {
+    acc.x = 0;
+    acc.y = 0;
+    if (vel.x < 1) {
+      vel.x = vel.x * 0.5;
+    } else vel.x = 0;
+    if (vel.y < 1) {
+      vel.y = vel.y * 0.5;
+    } else vel.y = 0;
   }
   
   // Flee from all nearby recon agents
   // Call every frame once detected
-  // Return to normal behavior once at reasonable distance
-  void FleeFromRecon(){
+  // Return to normal behavior once at reasonable distance from all recon agents (1.25*recon.visionLength?)
+  void FleeFromRecon(float dt) {
+    calculateFleeForces();
+    calculateVelocities(dt, true);
+    calculatePositions(dt);
+    calculateCollisions();
+    calculateRotations(dt);
+  }
+  void calculateFleeForces(){
+    // Avoid Recon
+    for (Recon recon : recon) {
+      float maxDist = 1.25 * recon.visionLength;
+      if (dist(pos.x,pos.y,recon.pos.x,recon.pos.y) < maxDist){
+        float awayFromReconX = pos.x - recon.pos.x;
+        float awayFromReconY = pos.y - recon.pos.y;
+        print("test\n");
+        acc.x += (awayFromReconX*maxDist - awayFromReconX) *50;
+        acc.y += (awayFromReconY*maxDist - awayFromReconY) *50;
+      }
+    }
+    // Collision Avoidance Forces
+    collisionForce(50);
+    // If agent will soon collide with wall, force away from wall
+    if (pos.x < (5 + size/2)) {  // Left Wall
+      if (vel.x < 0) acc.x += maxVelocity*10;
+    }
+    if (pos.x > (fieldWidth -5 - size/2)) {  // Right Wall
+      if (vel.x > 0) acc.x -= maxVelocity*10;
+    }
+    if (pos.y < (5 + size/2)) {  // Top Wall
+      if (vel.y < 0) acc.y += maxVelocity*10;
+    }
+    if (pos.y > (fieldHeight - 5 - size/2)) {  // Bottom Wall
+      if (vel.y > 0) acc.y -= maxVelocity*10;
+    }
+  }
+  void collisionForce(float collisionDistance) {  // Collision Avoidance Forces
+    float totalVelocity = sqrt(vel.x*vel.x + vel.y*vel.y);
+    if (totalVelocity == 0) totalVelocity = 0.01;
+    float aheadX = pos.x + (vel.x/totalVelocity*collisionDistance);
+    float aheadY = pos.y + (vel.y/totalVelocity*collisionDistance);
+    Obstacle obstacle = aheadCollision(pos.x, pos.y, aheadX, aheadY, collisionDistance);
+    if (obstacle != null) {
+      float tempX = aheadX - obstacle.position.x;
+      float tempY = aheadY - obstacle.position.y;
+      float tempTotal = sqrt(tempX*tempX + tempY*tempY);
+      acc.x += tempX/tempTotal*maxVelocity*10;
+      acc.y += tempY/tempTotal*maxVelocity*10;
+    }
+  }
+  Obstacle aheadCollision(float agentX, float agentY, float aheadX, float aheadY, float collisionDistance) {
+    int intervalCount = (int)(collisionDistance*10);
+    float intervalDirX = (aheadX - agentX)/intervalCount;
+    float intervalDirY = (aheadY - agentY)/intervalCount;
+    float intervalPosX = agentX;
+    float intervalPosY = agentY;
+    for (int k=0; k<intervalCount; k++) {
+      // Check if a collision occurs between agent position and ahead position
+      // If a collision occurs, obstacle = obstacle number, else obstacle = -1
+      float dx, dy, CRadius;
+      for (Obstacle obstacle : obstacles) {
+        dx = (intervalPosX-obstacle.position.x);
+        dy = (intervalPosY-obstacle.position.y);
+        CRadius = (obstacle.size/2 + size);
+        if ( (dx*dx + dy*dy) < (CRadius*CRadius) ) {
+          return obstacle;
+        }
+      }
+      intervalPosX += intervalDirX;
+      intervalPosY += intervalDirY;
+    }
+    return null;
   }
 
-  
-  */
-   
-  
-  
+
+
 }
