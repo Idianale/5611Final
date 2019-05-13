@@ -76,7 +76,7 @@ void setup() {
 void updateSim(float dt) {
   print("PredatorSpotted",predatorSpotted(),"\n");
   for (Acquisition acquisition : acquisition) {
-    acquisition.idle(); 
+    //acquisition.idle(); 
     acquisition.performActions(dt); 
   }
   for (Recon recon : recon) {
@@ -95,7 +95,8 @@ void updateSim(float dt) {
 void drawSim() {
   background(200,200,200);
   
-  /*// ACQUISITION PATHS DEBUGGING CODE
+  // ACQUISITION PATHS DEBUGGING CODE
+  /*
   for (Acquisition acquisition : acquisition){
     // Render Possible Paths
     strokeWeight(1);
@@ -121,7 +122,7 @@ void drawSim() {
   }
   // END DEBUG CODE*/
   
-  /*// RECON PATHS DEBUGGING CODE
+  // RECON PATHS DEBUGGING CODE
   for (Recon recon : recon){
     // Render Possible Paths
     strokeWeight(1);
@@ -281,7 +282,7 @@ float time = 60;
 
 void replan(){
   for (Acquisition acquisition : acquisition) {
-    acquisition.generatePlan();
+    //acquisition.generatePlan();
   }
   for (Recon recon : recon) {
     //recon.generatePlan();

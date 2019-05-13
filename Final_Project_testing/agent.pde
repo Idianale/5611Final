@@ -1,4 +1,4 @@
-class Agent implements Planner { //<>//
+class Agent implements Planner { //<>// //<>//
   PVector pos; 
   PVector vel; 
   PVector acc; 
@@ -350,7 +350,7 @@ class Agent implements Planner { //<>//
       case AQUISITION: 
         if(blackboard.status == DANGER || ws.PredatorInRange == true){
           ws.ActionType = FLEE; 
-        } else if (blackboard.status == SAFE && ws.PredatorInRange == false && ws.resourcesAvailable == true){
+        } else if (ws.PredatorInRange == false && ws.resourcesAvailable == true){
           ws.ActionType = PLAN; 
         } else {
           ws.ActionType = IDLE; 
