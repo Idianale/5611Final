@@ -19,9 +19,12 @@ int numRecon = 3;
 int numAcquisition = 4;
 int numPredator = 1;
 
+
+
 void setup() {
   size(1000,720);
   
+  blackboard = new BlackBoard(); 
   // Initialize list of obstacles
   obstacles = new ArrayList<Obstacle>(numObstacles);
   for (int i = 0; i < numObstacles; i++) {

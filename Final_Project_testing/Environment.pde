@@ -58,6 +58,10 @@ class Resource {
     }
   }
   
+  void collect(){
+    quantity -= 10; 
+  }
+  
   void Draw() {
     if (quantity>0){
       fill(100+15*quantity,100+15*quantity,100+15*quantity);

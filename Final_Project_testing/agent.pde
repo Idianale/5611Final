@@ -1,4 +1,4 @@
-class Agent { //<>//
+class Agent implements Planner { //<>//
   PVector pos; 
   PVector vel; 
   PVector acc; 
@@ -11,8 +11,9 @@ class Agent { //<>//
   float[][] nodeCost = new float[NODECOUNT][NODECOUNT];
   IntList answer  = new IntList();
   boolean answerFound = false;
-  WorldState ws; 
-
+  State ws; 
+  Queue<Integer> plan; 
+  
   Agent() {
     pos = new PVector(190, 110, 0);
     vel = new PVector(0, 0, 0); 
@@ -334,12 +335,41 @@ class Agent { //<>//
       return true;
     } else return false;
   }
+  
+  int idleCount = 0; 
+  void idle(){
+    idleCount++;  
+    if(idleCount == 10){
+      generatePlan(); 
+    }
+  }
+    
+  @Override
+  void generatePlan(){
+    switch(ws.AgentType){
+      case AQUISITION: 
+        if(blackboard.status == DANGER || ws.PredatorInRange == true){
+          ws.ActionType = FLEE; 
+        } else if (blackboard.status == SAFE && ws.PredatorInRange == false && ws.resourcesAvailable == true){
+          ws.ActionType = COLLECT; 
+        } else {
+          ws.ActionType = IDLE; 
+        }
+        break; 
+      case RECON:
+        if(blackboard.status == DANGER || ws.PredatorInRange == true){
+          ws.ActionType = HUNT; 
+        } else if (blackboard.status == SAFE && ws.PredatorInRange == false && ws.resourcesAvailable == true){
+          ws.ActionType = PATROL; 
+        } else {
+          ws.ActionType = IDLE; 
+        }
+        break; 
+    }    
+  }
+  
 }
 
-class WorldState {
-  WorldState() {
-  };
-}
 
 /*
 =========================================
@@ -351,6 +381,8 @@ class Acquisition extends Agent {
   Resource targetResource;
 
   Acquisition() {
+    ws = new State(0); 
+    plan = new LinkedList<Integer>(); 
     size = 30;
     maxVelocity = 100;
     this.pos = new PVector(r.nextFloat()*fieldWidth, r.nextFloat()*fieldHeight, 0);
@@ -361,6 +393,8 @@ class Acquisition extends Agent {
     visionY2 = pos.y + cos(dir+PI/8)*visionLength;
   }
   Acquisition(float x, float y, int agentSpawned) {
+    ws = new State(0); 
+    plan = new LinkedList<Integer>(); 
     size = 30;
     maxVelocity = 100;
     float spawn_at_x, spawn_at_y;
@@ -454,6 +488,7 @@ class Acquisition extends Agent {
   // Call this function each frame while moving towards resource
   // Always call LocateResource() and FindPathToResource() before initially calling this function
   void MoveToResource(float dt) {
+    ws.ActionType = 1; 
     calculateNextNode();
     calculateAcquisitionForces();
     calculateVelocities(dt, true);
@@ -483,6 +518,7 @@ class Acquisition extends Agent {
   // Gradually deplete resource
   // Call this function each frame while sitting at a resource
   void DepleteResource(float dt) {
+    ws.ActionType = 2;
     if (targetResource.quantity > 0) {
       targetResource.quantity = targetResource.quantity - 100*dt;
       // Note: Increase scoreboard count by dt
@@ -494,6 +530,7 @@ class Acquisition extends Agent {
   // Moves away from predator's last seen location
   // Call this function each frame while fleeing from predator
   void FleeFromPredator(float dt) {
+    ws.ActionType = 3; 
     calculateFleeForces();
     calculateVelocities(dt, true);
     calculatePositions(dt);
@@ -580,11 +617,44 @@ class Acquisition extends Agent {
               visionX1, visionY1,
               visionX2, visionY2,
               predator.pos.x+(cos(predator.dir)*predator.size/2),
-              predator.pos.y+(sin(predator.dir)*predator.size/2))) return true;
+              predator.pos.y+(sin(predator.dir)*predator.size/2))) 
+              predLastSeen.set(predator.pos.x, predator.pos.y); 
+              blackboard.status = WARNING; 
+              return true;
       }
     }
     return false;
   }
+  
+  void performActions(float dt){
+    switch(ws.ActionType){
+      case IDLE:
+        idle(); 
+        break; 
+      case PLAN:
+        LocateResource();
+        FindPathToResource(); 
+        ws.ActionType = NAVIGATE;
+        break; 
+      case NAVIGATE:
+        MoveToResource(dt); 
+      case COLLECT:
+        DepleteResource(dt); 
+      case FLEE:
+        FleeFromPredator(dt); 
+      case HUNT:
+        idle(); 
+        break; 
+      case PATROL: 
+        idle(); 
+        break; 
+      default:
+        idle(); 
+        break; 
+    }
+    
+  }
+
 
 }
 
@@ -603,6 +673,8 @@ class Recon extends Agent {
   PVector targetDestination = new PVector();
 
   Recon() {
+    ws = new State(1); 
+    plan = new LinkedList<Integer>(); 
     this.size = 20;
     maxVelocity = 200;
     this.pos = new PVector(r.nextFloat()*fieldWidth, r.nextFloat()*fieldHeight, 0);
@@ -613,6 +685,8 @@ class Recon extends Agent {
     visionY2 = pos.y + cos(dir+PI/8)*visionLength;
   }
   Recon(float x, float y, int agentSpawned) {
+    ws = new State(1); 
+    plan = new LinkedList<Integer>(); 
     this.size = 20;
     float spawn_at_x, spawn_at_y;
     // Check for collision with previously spawned agents and obstacles
@@ -721,6 +795,7 @@ class Recon extends Agent {
   // Find path to targetDestination
   // Call once after FindPatrolDestination() (which sets the targetDestination)
   void FindPatrolPath() {
+    ws.ActionType = PATROL; 
     for (int i=0; i<10; i++) {
       initializeNodes(targetDestination.x, targetDestination.y);
       calcNodeCostMatrix();
@@ -828,6 +903,7 @@ class Recon extends Agent {
           initializeNodes(potentialX, potentialY);
           calcNodeCostMatrix();
           if (search(this,3)) {
+            ws.ActionType = HUNT;
             answerFound = true;
             break;
           }
@@ -837,6 +913,36 @@ class Recon extends Agent {
       }
     }
   }
+  
+    void performActions(float dt){
+      switch(ws.ActionType){
+        case IDLE:
+          idle(); 
+          break; 
+        case PLAN:
+          ws.ActionType = NAVIGATE;
+          FindPatrolDestination(); 
+          FindPatrolPath(); 
+          break; 
+        case NAVIGATE:
+          break; 
+        case FLEE:
+          idle(); 
+          break; 
+        case HUNT:
+          FindPathToPredator(); 
+          SearchForPredator(300); 
+          MoveToDestination(dt); 
+          break; 
+        case PATROL: 
+          MoveToDestination(dt); 
+          break; 
+        default:
+          ws.ActionType=PLAN; 
+          generatePlan(); 
+          break; 
+      }
+    }
 }
 
 /*
@@ -847,11 +953,15 @@ class Recon extends Agent {
 
 class Predator extends Agent {
   Predator() {
+    ws = new State(2); 
+    plan = new LinkedList<Integer>(); 
     this.size = 20;
     maxVelocity = 200;
     this.pos = new PVector(r.nextFloat()*fieldWidth, r.nextFloat()*fieldHeight, 0);
   }
   Predator(float herdX, float herdY, int agentSpawned, float minDistFromHerd) {
+    ws = new State(2); 
+    plan = new LinkedList<Integer>(); 
     this.size = 20;
     maxVelocity = 200;
 
@@ -920,6 +1030,7 @@ class Predator extends Agent {
   Acquisition prevTarget = null;
   boolean rechoosePath = true;
   void ChooseTargetAndPath() {
+    ws.ActionType = HUNT; 
     // Shallow copy acquisition
     ArrayList<Acquisition> sortedAcquisition =  (ArrayList<Acquisition>) acquisition.clone();
     // First element = closest acquisition agent
@@ -1217,5 +1328,31 @@ class Predator extends Agent {
     }
     return null;
   }
+  
+  void performActions(float dt){
+    switch(ws.ActionType){
+      case IDLE:
+        idle();
+        doNothing(); 
+        break; 
+      case PLAN:
+        ChooseTargetAndPath(); 
+        ws.ActionType = HUNT; 
+        break; 
+      case NAVIGATE:
+        idle(); 
+        break; 
+      case FLEE:
+        FleeFromRecon(dt); 
+        break; 
+      case HUNT:
+        FollowPathToTarget(dt); 
+        break; 
+      default:
+        ws.ActionType=PLAN; 
+        generatePlan(); 
+        break; 
+    }
+    }
 
-}
+  }
