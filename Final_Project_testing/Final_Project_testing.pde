@@ -73,8 +73,10 @@ void setup() {
   
 }
 
+boolean predatorSpotted = false;
 void updateSim(float dt) {
-  print("PredatorSpotted",predatorSpotted(),"\n");
+  predatorSpotted = predatorSpotted();
+  print("PredatorSpotted",predatorSpotted,"\n");
   for (Acquisition acquisition : acquisition) {
     acquisition.idle(); 
     acquisition.performActions(dt); 
@@ -290,20 +292,24 @@ void replan(){
 
 boolean predatorSpotted(){
   for (Recon recon : recon){
+    print(blackboard.status, recon.ws.PredatorInRange, recon.ws.resourcesAvailable,"\n");  // DEBUG CODE, TODO: REMOVE
     for (Predator predator : predator){
       for (float i=0; i<(2*PI); i+=(PI/8)){
         if (predator.trianglePointCollision(
               recon.pos.x,    recon.pos.y,
               recon.visionX1, recon.visionY1,
               recon.visionX2, recon.visionY2,
-              predator.pos.x+(cos(predator.dir)*predator.size/2),
-              predator.pos.y+(sin(predator.dir)*predator.size/2)))
-              blackboard.status = WARNING;
-              replan(); 
-              return true;
+              predator.pos.x+(cos(i)*predator.size/2),
+              predator.pos.y+(sin(i)*predator.size/2)))
+              {
+                blackboard.status = DANGER;
+                replan(); 
+                return true;
+              }
       }
     }
   }
+  blackboard.status = SAFE;
   return false;
 }
 

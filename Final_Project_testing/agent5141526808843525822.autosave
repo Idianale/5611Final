@@ -1,4 +1,4 @@
-class Agent implements Planner { //<>// //<>//
+class Agent implements Planner {
   PVector pos; 
   PVector vel; 
   PVector acc; 
@@ -351,7 +351,7 @@ class Agent implements Planner { //<>// //<>//
         if(blackboard.status == DANGER || ws.PredatorInRange == true){
           ws.ActionType = FLEE; 
         } else if (blackboard.status == SAFE && ws.PredatorInRange == false && ws.resourcesAvailable == true){
-          ws.ActionType = PLAN; 
+          ws.ActionType = COLLECT; 
         } else {
           ws.ActionType = IDLE; 
         }
@@ -363,13 +363,6 @@ class Agent implements Planner { //<>// //<>//
           ws.ActionType = PATROL; 
         } else {
           ws.ActionType = IDLE; 
-        }
-        break; 
-      case PREDATOR:
-        if(blackboard.status == DANGER){
-          ws.ActionType = FLEE; 
-        } else {
-          ws.ActionType = PLAN; 
         }
         break; 
     }    
@@ -626,7 +619,7 @@ class Acquisition extends Agent {
               predator.pos.x+(cos(predator.dir)*predator.size/2),
               predator.pos.y+(sin(predator.dir)*predator.size/2))) 
               predLastSeen.set(predator.pos.x, predator.pos.y); 
-              //blackboard.status = WARNING; 
+              blackboard.status = WARNING; 
               return true;
       }
     }
@@ -648,8 +641,7 @@ class Acquisition extends Agent {
       case COLLECT:
         DepleteResource(dt); 
       case FLEE:
-        predatorSpottedAcquisition(); 
-        //FleeFromPredator(dt); 
+        FleeFromPredator(dt); 
       case HUNT:
         idle(); 
         break; 
@@ -820,26 +812,7 @@ class Recon extends Agent {
   // Call this function each frame while moving towards targetDestination
   // Always call FindPatrolDestination() and FindPatrolPath() before initially calling this function
   // Note: Once agent arrives at targetDestination, call FindPatrolDestination() for a new destination
-  float timeSinceLastCheck = 1;
   void MoveToDestination(float dt) {
-    // If at goal
-    if (nextNode==(answer.size()-1)) {
-      float goalDistance = size;
-      float tempGoalX = nodePos[answer.get(nextNode)][0];
-      float tempGoalY = nodePos[answer.get(nextNode)][1];
-      float dist = dist(tempGoalX, tempGoalY, pos.x, pos.y);
-      if (dist < goalDistance) {
-        ws.ActionType=PLAN;
-      }   
-    }
-    // Else
-    if (predatorSpotted){
-      if (timeSinceLastCheck < 0) predatorFound = false;
-      timeSinceLastCheck-=dt;
-      ws.ActionType = HUNT;
-      predLastSeen.x = predator.get(0).pos.x;
-      predLastSeen.y = predator.get(0).pos.y;
-    }
     calculateNextNode();
     calculatePatrolForces();
     calculateVelocities(dt, true);
@@ -861,8 +834,8 @@ class Recon extends Agent {
       float tempX = aheadX - obstacle.position.x;
       float tempY = aheadY - obstacle.position.y;
       float tempTotal = sqrt(tempX*tempX + tempY*tempY);
-      acc.x += tempX/tempTotal*maxVelocity;
-      acc.y += tempY/tempTotal*maxVelocity;
+      acc.x += tempX/tempTotal*maxVelocity*5;
+      acc.y += tempY/tempTotal*maxVelocity*5;
     }
   }
   Obstacle aheadCollision(float agentX, float agentY, float aheadX, float aheadY, float collisionDistance) {
@@ -947,9 +920,9 @@ class Recon extends Agent {
           idle(); 
           break; 
         case PLAN:
+          ws.ActionType = NAVIGATE;
           FindPatrolDestination(); 
           FindPatrolPath(); 
-          ws.ActionType = PATROL;
           break; 
         case NAVIGATE:
           break; 
@@ -957,10 +930,9 @@ class Recon extends Agent {
           idle(); 
           break; 
         case HUNT:
-          if (!predatorFound) FindPathToPredator(); 
-          //SearchForPredator(300); 
+          FindPathToPredator(); 
+          SearchForPredator(300); 
           MoveToDestination(dt); 
-          if (!predatorSpotted) ws.ActionType = PLAN;
           break; 
         case PATROL: 
           MoveToDestination(dt); 
@@ -972,7 +944,6 @@ class Recon extends Agent {
       }
     }
 }
-boolean predatorFound = false;
 
 /*
 ======================================
@@ -1163,7 +1134,6 @@ class Predator extends Agent {
   // Note: doNothing() can be called directly instead of this function if (answerFound==false)
   float timeSinceLastCheck = 1;
   void FollowPathToTarget(float dt) {
-    if (blackboard.status == DANGER) ws.ActionType = FLEE;
     if (rechoosePath) ws.ActionType = PLAN;
     if (timeSinceLastCheck < 0){
       timeSinceLastCheck = 1;
@@ -1207,17 +1177,15 @@ class Predator extends Agent {
   }
   boolean agentPredatorNodePathCollision(int node, float dist) {
     int intervalCount = (int)(dist);
-    if (intervalCount!=0){
-      float intervalDirX = (nodePos[answer.get(node)][0]-pos.x)/intervalCount;
-      float intervalDirY = (nodePos[answer.get(node)][1]-pos.y)/intervalCount;
-      float intervalPosX = pos.x;
-      float intervalPosY = pos.y;
-      for (int k=0; k<intervalCount; k++) {
-        if (!validAgentCSpace(intervalPosX, intervalPosY)) return true;
-        if (!predatorSafeCSpace(intervalPosX, intervalPosY)) return true;
-        intervalPosX += intervalDirX;
-        intervalPosY += intervalDirY;
-      }
+    float intervalDirX = (nodePos[answer.get(node)][0]-pos.x)/intervalCount;
+    float intervalDirY = (nodePos[answer.get(node)][1]-pos.y)/intervalCount;
+    float intervalPosX = pos.x;
+    float intervalPosY = pos.y;
+    for (int k=0; k<intervalCount; k++) {
+      if (!validAgentCSpace(intervalPosX, intervalPosY)) return true;
+      if (!predatorSafeCSpace(intervalPosX, intervalPosY)) return true;
+      intervalPosX += intervalDirX;
+      intervalPosY += intervalDirY;
     }
     return false;
   }
@@ -1299,10 +1267,6 @@ class Predator extends Agent {
   // Call every frame once detected
   // Return to normal behavior once at reasonable distance from all recon agents (1.25*recon.visionLength?)
   void FleeFromRecon(float dt) {
-    if (blackboard.status == SAFE){
-      timeSinceLastFleeCheck -= dt;
-      if (timeSinceLastFleeCheck < 0) ws.ActionType=PLAN;
-    }
     calculateFleeForces();
     calculateVelocities(dt, true);
     calculatePositions(dt);
@@ -1314,24 +1278,24 @@ class Predator extends Agent {
     for (Recon recon : recon) {
       float maxDist = (1.25 * recon.visionLength);
       if (dist(pos.x,pos.y,recon.pos.x,recon.pos.y) < maxDist){
-        acc.x += (pos.x - recon.pos.x)*100;
-        acc.y += (pos.y - recon.pos.y)*100;
+        acc.x += (pos.x - recon.pos.x)*50;
+        acc.y += (pos.y - recon.pos.y)*50;
       }
     }
     // Collision Avoidance Forces
     collisionForce(50);
     // If agent will soon collide with wall, force away from wall
     if (pos.x < (5 + size/2)) {  // Left Wall
-      if (vel.x < 0) acc.x += maxVelocity*50;
+      if (vel.x < 0) acc.x += maxVelocity*10;
     }
     if (pos.x > (fieldWidth -5 - size/2)) {  // Right Wall
-      if (vel.x > 0) acc.x -= maxVelocity*50;
+      if (vel.x > 0) acc.x -= maxVelocity*10;
     }
     if (pos.y < (5 + size/2)) {  // Top Wall
-      if (vel.y < 0) acc.y += maxVelocity*50;
+      if (vel.y < 0) acc.y += maxVelocity*10;
     }
     if (pos.y > (fieldHeight - 5 - size/2)) {  // Bottom Wall
-      if (vel.y > 0) acc.y -= maxVelocity*50;
+      if (vel.y > 0) acc.y -= maxVelocity*10;
     }
   }
   void collisionForce(float collisionDistance) {  // Collision Avoidance Forces
@@ -1344,10 +1308,8 @@ class Predator extends Agent {
       float tempX = aheadX - obstacle.position.x;
       float tempY = aheadY - obstacle.position.y;
       float tempTotal = sqrt(tempX*tempX + tempY*tempY);
-      if (tempTotal!=0){
-        acc.x += tempX/tempTotal*maxVelocity*10;
-        acc.y += tempY/tempTotal*maxVelocity*10;
-      }
+      acc.x += tempX/tempTotal*maxVelocity*10;
+      acc.y += tempY/tempTotal*maxVelocity*10;
     }
   }
   Obstacle aheadCollision(float agentX, float agentY, float aheadX, float aheadY, float collisionDistance) {
@@ -1374,7 +1336,6 @@ class Predator extends Agent {
     return null;
   }
   
-  float timeSinceLastFleeCheck = 4;
   void performActions(float dt){
     switch(ws.ActionType){
       case IDLE:
@@ -1389,15 +1350,14 @@ class Predator extends Agent {
         idle(); 
         break; 
       case FLEE:
-        FleeFromRecon(dt);
-        timeSinceLastFleeCheck=2;
+        FleeFromRecon(dt); 
         break; 
       case HUNT:
         FollowPathToTarget(dt); 
         break; 
       default:
         ws.ActionType=PLAN; 
-        //generatePlan(); 
+        generatePlan(); 
         break; 
     }
     }
