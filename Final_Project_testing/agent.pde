@@ -1132,6 +1132,7 @@ class Predator extends Agent {
   // Call every frame when following path to target
   // Can also be called when no target is chosen, in which case doNothing() is called
   // Note: doNothing() can be called directly instead of this function if (answerFound==false)
+  float timeSinceLastCheck = 1;
   void FollowPathToTarget(float dt) {
     if (answerFound) {
       if (SafePath()) {
