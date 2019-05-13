@@ -73,9 +73,21 @@ void setup() {
   
 }
 
-void updateSim(double dt) {
+void updateSim(float dt) {
   print("PredatorSpotted",predatorSpotted(),"\n");
-  
+  for (Acquisition acquisition : acquisition) {
+    acquisition.idle(); 
+    acquisition.performActions(dt); 
+  }
+  for (Recon recon : recon) {
+    //recon.generatePlan();
+    recon.idle(); 
+    recon.performActions(dt); 
+  }
+  for (Predator predator : predator) {
+    //predator.idle(); 
+    predator.performActions(dt); 
+  }  
 }
 
 
@@ -267,6 +279,14 @@ void keyPressed() {
 }
 float time = 60;
 
+void replan(){
+  for (Acquisition acquisition : acquisition) {
+    acquisition.generatePlan();
+  }
+  for (Recon recon : recon) {
+    //recon.generatePlan();
+  }
+}
 
 boolean predatorSpotted(){
   for (Recon recon : recon){
@@ -277,7 +297,10 @@ boolean predatorSpotted(){
               recon.visionX1, recon.visionY1,
               recon.visionX2, recon.visionY2,
               predator.pos.x+(cos(predator.dir)*predator.size/2),
-              predator.pos.y+(sin(predator.dir)*predator.size/2))) return true;
+              predator.pos.y+(sin(predator.dir)*predator.size/2)))
+              blackboard.status = WARNING;
+              replan(); 
+              return true;
       }
     }
   }

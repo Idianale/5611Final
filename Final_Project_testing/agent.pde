@@ -351,7 +351,7 @@ class Agent implements Planner { //<>//
         if(blackboard.status == DANGER || ws.PredatorInRange == true){
           ws.ActionType = FLEE; 
         } else if (blackboard.status == SAFE && ws.PredatorInRange == false && ws.resourcesAvailable == true){
-          ws.ActionType = COLLECT; 
+          ws.ActionType = PLAN; 
         } else {
           ws.ActionType = IDLE; 
         }
@@ -641,7 +641,8 @@ class Acquisition extends Agent {
       case COLLECT:
         DepleteResource(dt); 
       case FLEE:
-        FleeFromPredator(dt); 
+        predatorSpottedAcquisition(); 
+        //FleeFromPredator(dt); 
       case HUNT:
         idle(); 
         break; 

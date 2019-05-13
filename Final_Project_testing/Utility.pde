@@ -1,8 +1,14 @@
 // Need to implement functions as callable using the command design pattern
+
+// AgentType
 static final int AQUISITION = 0, RECON = 1, PREDATOR = 2; 
+
+// ActionType
 static final int IDLE = 0, NAVIGATE = 1,
                   COLLECT = 2, FLEE = 3, HUNT = 4,
                   PATROL = 5, PLAN = 6; 
+
+// Safety Status
 static final int SAFE = 0, WARNING = 1, DANGER = 2; 
 
 class BlackBoard {
