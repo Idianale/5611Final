@@ -124,7 +124,7 @@ void drawSim() {
   }
   // END DEBUG CODE*/
   
-  // RECON PATHS DEBUGGING CODE
+  /*// RECON PATHS DEBUGGING CODE
   for (Recon recon : recon){
     // Render Possible Paths
     strokeWeight(1);

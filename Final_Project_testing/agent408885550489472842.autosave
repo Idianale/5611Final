@@ -1,4 +1,4 @@
-class Agent implements Planner { //<>// //<>// //<>//
+class Agent implements Planner { //<>//
   PVector pos; 
   PVector vel; 
   PVector acc; 
@@ -350,7 +350,7 @@ class Agent implements Planner { //<>// //<>// //<>//
       case AQUISITION: 
         if(blackboard.status == DANGER || ws.PredatorInRange == true){
           ws.ActionType = FLEE; 
-        } else if (ws.PredatorInRange == false && ws.resourcesAvailable == true){
+        } else if (blackboard.status == SAFE && ws.PredatorInRange == false && ws.resourcesAvailable == true){
           ws.ActionType = PLAN; 
         } else {
           ws.ActionType = IDLE; 
@@ -1301,7 +1301,10 @@ class Predator extends Agent {
   void FleeFromRecon(float dt) {
     if (blackboard.status == SAFE){
       timeSinceLastFleeCheck -= dt;
-      if (timeSinceLastFleeCheck < 0) ws.ActionType=PLAN;
+      if (timeSinceLastFleeCheck < 0){
+        ws.ActionType=PLAN;
+        timeSinceLastFleeCheck = 2;
+      }
     }
     calculateFleeForces();
     calculateVelocities(dt, true);
@@ -1322,19 +1325,15 @@ class Predator extends Agent {
     collisionForce(50);
     // If agent will soon collide with wall, force away from wall
     if (pos.x < (5 + size/2)) {  // Left Wall
-      pos.x = (7 + size/2);
       if (vel.x < 0) acc.x += maxVelocity*50;
     }
     if (pos.x > (fieldWidth -5 - size/2)) {  // Right Wall
-      pos.x = (fieldWidth -7 - size/2);
       if (vel.x > 0) acc.x -= maxVelocity*50;
     }
     if (pos.y < (5 + size/2)) {  // Top Wall
-      pos.y = (7 + size/2);
       if (vel.y < 0) acc.y += maxVelocity*50;
     }
     if (pos.y > (fieldHeight - 5 - size/2)) {  // Bottom Wall
-      pos.y = (fieldHeight - 7 - size/2);
       if (vel.y > 0) acc.y -= maxVelocity*50;
     }
   }
@@ -1378,7 +1377,7 @@ class Predator extends Agent {
     return null;
   }
   
-  float timeSinceLastFleeCheck = 4;
+  float timeSinceLastFleeCheck = 2;
   void performActions(float dt){
     switch(ws.ActionType){
       case IDLE:
@@ -1394,7 +1393,7 @@ class Predator extends Agent {
         break; 
       case FLEE:
         FleeFromRecon(dt);
-        timeSinceLastFleeCheck=2;
+        if (predatorSpotted) timeSinceLastFleeCheck=2;
         break; 
       case HUNT:
         FollowPathToTarget(dt); 
